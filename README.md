@@ -8,7 +8,7 @@ A simple app to test the functionality of [UpGrade](https://github.com/CarnegieL
 1. You need to have [Python](https://realpython.com/installing-python/) installed on your computer
 2. Run the following commands in the Terminal
 ```
-git clone https://github.com/CarnegieLearningWeb/upgrade-tester
+git clone https://github.com/CarnegieLearningWeb/upgrade-tester.git
 cd upgrade-tester
 python -m http.server 8000
 ```
