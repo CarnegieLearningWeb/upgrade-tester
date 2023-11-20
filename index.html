@@ -276,7 +276,7 @@
 
         #experiment-settings-form {
             width: 450px;
-            height: 360px;
+            height: 400px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -285,7 +285,7 @@
 
         #selects-container {
             width: 100%;
-            height: 270px;
+            height: 310px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -484,6 +484,10 @@
                                     <option value="False">False</option>
                                 </select>
                             </div>
+                            <div class="select-wrapper">
+                                <label for="status-update-delay">Status Update Delay (s):</label>
+                                <input type="number" name="status-update-delay" class="select" id="status-update-delay" min="0" max="30" value="0">
+                            </div>
                         </div>
                         <div id="button-wrapper">
                             <button id="runtest-button" class="unselectable" type="submit"><i class="fa fa-rocket fa-lg"></i>Run Test</button>
@@ -573,6 +577,7 @@
             const consistencyRuleSelect = document.getElementById("consistency-rule");
             const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
             const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
+            const statusUpdateDelay = document.getElementById("status-update-delay");
             const runTestButton = document.getElementById("runtest-button");
             const conditionsTable = document.getElementById("conditions-table");
             const studentCells = conditionsTable.getElementsByClassName("student-cell");
@@ -630,6 +635,7 @@
                         postExperimentRule: postExperimentRuleSelect.value.toLowerCase() === "continue" ? "continue" : "assign",
                         postExperimentConditionCode: postExperimentRuleSelect.value.toLowerCase() === "continue" ? null : postExperimentRuleSelect.value,
                         excludeIfReached: excludeIfReachedSelect.value.toLowerCase() === "true" ? true : false,
+                        statusUpdateDelayMillis: Number(statusUpdateDelay.value) * 1000,
                         conditionCodes: ["Condition A", "Condition B", "Condition C"],
                         queryKeys: [],
                         conditionCells: conditionCells,
@@ -692,6 +698,7 @@
                 this.postExperimentRule = experimentSettings.postExperimentRule;
                 this.postExperimentConditionCode = experimentSettings.postExperimentConditionCode;
                 this.excludeIfReached = experimentSettings.excludeIfReached;
+                this.statusUpdateDelayMillis = experimentSettings.statusUpdateDelayMillis;
                 this.conditionCodes = experimentSettings.conditionCodes;
                 this.queryKeys = experimentSettings.queryKeys;
                 this.conditionCells = experimentSettings.conditionCells;
@@ -902,6 +909,9 @@
                     state: experimentStatus
                 });
                 this.experimentStatus = experimentStatus;
+
+                // Delay for a specified number of milliseconds
+                await new Promise(resolve => setTimeout(resolve, this.statusUpdateDelayMillis));
             }
 
             async visitDecisionPoint(studentName, studentId, group) {
