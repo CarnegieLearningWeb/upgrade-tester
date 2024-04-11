@@ -425,7 +425,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@5.0.12/dist/browser/index.js"></script>
 </head>
 
 <body>
@@ -769,6 +769,11 @@
                 for (const conditionCode of this.conditionCodes) {
                     conditionIdMap[conditionCode] = this.idGenerator.uuidv4();
                 }
+                const payloadIdMap = {};
+                for (const conditionCode of this.conditionCodes) {
+                    payloadIdMap[conditionCode] = this.idGenerator.uuidv4();
+                }
+                const decisionPointId = this.idGenerator.uuidv4();
                 const segmentNamePrefix = this.idGenerator.uuidv4();
                 await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, {
                     createdAt: this.date,
@@ -780,25 +785,30 @@
                     context: [this.context],
                     state: "inactive",
                     startOn: null,
-                    assignmentUnit: this.assignmentUnit,
                     consistencyRule: this.consistencyRule,
+                    assignmentUnit: this.assignmentUnit,
                     postExperimentRule: this.postExperimentRule,
-                    type: "Simple",
                     enrollmentCompleteCondition: null,
                     endOn: null,
                     revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode] : null : null,
                     tags: [],
                     group: this.assignmentUnit === "group" ? "add-group1" : null,
+                    conditionOrder: null,
+                    assignmentAlgorithm: "random",
                     logging: false,
                     filterMode: "includeAll",
-                    backendVersion: "1.0.0",
-                    partitions: this.makePartitions(),
-                    conditions: this.makeConditions(conditionIdMap),
+                    backendVersion: "5.1.0",
+                    type: "Simple",
+                    partitions: this.makePartitions(decisionPointId),
+                    conditions: this.makeConditions(conditionIdMap, payloadIdMap),
                     conditionAliases: [],
                     stateTimeLogs: [],
                     queries: this.makeQueries(),
                     experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
-                    experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion")
+                    experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
+                    factors: [],
+                    stratificationFactor: null,
+                    conditionPayloads: this.makePayloads(decisionPointId, conditionIdMap, payloadIdMap)
                 });
             }
 
@@ -915,37 +925,37 @@
             }
 
             async visitDecisionPoint(studentName, studentId, group) {
-                // Note: Later, this should be done in https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/upgrade-client-lib.min.js
                 const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
-
-                // Note: Wouldn't it make more sense to require the studentId in init() so the upClient can be reused/reinited?
-                const upClient = new UpgradeClient(studentId, this.hostUrl);
+                const upClient = new UpgradeClient(studentId, this.hostUrl, this.context);
                 const initStartTime = Date.now();
                 await upClient.init();
                 this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
                 if (group) {
-                    // Note: init(), setGroupMembership(), and setWorkingGroup() should accept object type instead of map (https://github.com/CarnegieLearningWeb/UpGrade/issues/148)
-                    const groupMembership = new Map();
-                    groupMembership.set("add-group1", ["Group A", "Group B"]);
-                    const workingGroup = new Map();
-                    workingGroup.set("add-group1", group);
+                    const groupMembership = {
+                        "add-group1":  ["Group A", "Group B"]
+                    }
+                    const workingGroup = {
+                        "add-group1": group
+                    }
                     await upClient.setGroupMembership(groupMembership);
                     await upClient.setWorkingGroup(workingGroup);
-                    // Note: init(groupMembership, workingGroup) doesn't seem to work
                 }
                 const experimentSite = `Site_${this.experimentId}`;
                 const experimentTarget = `Target_${this.experimentId}`;
                 const assignStartTime = Date.now();
-                const experimentCondition = await upClient.getExperimentCondition(this.context, experimentSite, experimentTarget); // Note: it might be better if it returns assignedCondition instead of the object that contains it
+                const assignment = await upClient.getDecisionPointAssignment(experimentSite, experimentTarget);
                 this.responseTimeCellMap.assign.responseTimes.push(Date.now() - assignStartTime);
                 let conditionCode = null;
-                if (experimentCondition) { // Note: It would be cleaner to write code if getExperimentCondition() always returns an object instead of null 
-                    conditionCode = experimentCondition.assignedCondition.conditionCode;
+                let markStatus = "no condition assigned";
+                if (assignment !== null) {
+                    markStatus = "condition applied";
+                    conditionCode = assignment.getCondition();
+                    if (!this.conditionCodes.includes(conditionCode)) {
+                        markStatus = "condition not applied";
+                    }
                 }
-                // Note: If markExperimentPoint() is always required after calling getExperimentCondition(), do we really need to separate the two?
-                // In what use cases do we call getExperimentCondition() and not call markExperimentPoint()?
                 const markStartTime = Date.now();
-                await upClient.markExperimentPoint(experimentSite, conditionCode, experimentTarget);
+                await assignment.markDecisionPoint(markStatus);
                 this.responseTimeCellMap.mark.responseTimes.push(Date.now() - markStartTime);
 
                 // Update the condition cells
@@ -970,25 +980,25 @@
             }
 
             // Make data functions (Used by createExperiment())
-            makePartitions() {
+            makePartitions(decisionPointId) {
                 const partitions = [];
                 const partition = {
                     createdAt: this.date,
                     updatedAt: this.date,
                     versionNumber: 1,
-                    id: this.idGenerator.uuidv4(),
+                    id: decisionPointId,
                     twoCharacterId: this.idGenerator.twoCharacterId(),
                     site: `Site_${this.experimentId}`,
                     target: `Target_${this.experimentId}`,
                     description: "",
-                    excludeIfReached: this.excludeIfReached,
-                    order: 1
+                    order: 1,
+                    excludeIfReached: this.excludeIfReached
                 };
                 partitions.push(partition);
                 return partitions;
             }
 
-            makeConditions(conditionIdMap) {
+            makeConditions(conditionIdMap, payloadIdMap) {
                 const conditions = [];
                 for (const conditionCode of this.conditionCodes) {
                     const condition = {
@@ -1001,11 +1011,42 @@
                         description: null,
                         conditionCode: conditionCode,
                         assignmentWeight: 100 / this.conditionCodes.length,
-                        order: 1
+                        order: 1,
+                        conditionPayloads: [
+                            {
+                                createdAt: this.date,
+                                updatedAt: this.date,
+                                versionNumber: 1,
+                                id: payloadIdMap[conditionCode],
+                                payloadValue: conditionCode,
+                                payloadType: "string"
+                            }
+                        ],
+                        levelCombinationElements: []
                     }
                     conditions.push(condition);
                 }
                 return conditions;
+            }
+
+            makePayloads(decisionPointId, conditionIdMap, payloadIdMap) {
+                const payloads = [];
+                for (const conditionCode of this.conditionCodes) {
+                    const payload = {
+                        createdAt: this.date,
+                        updatedAt: this.date,
+                        versionNumber: 1,
+                        id: payloadIdMap[conditionCode],
+                        parentCondition: conditionIdMap[conditionCode],
+                        decisionPoint: decisionPointId,
+                        payload: {
+                            type: "string",
+                            value: conditionCode
+                        }
+                    }
+                    payloads.push(payload);
+                }
+                return payloads;
             }
 
             makeQueries() {
@@ -1037,6 +1078,19 @@
 
             makeExperimentSegment(segmentNamePrefix, type) {
                 const name = `${segmentNamePrefix} ${type} Segment`;
+                const groupForSegment = [];
+                if (type === "Inclusion") {
+                    groupForSegment.push(
+                        {
+                            createdAt: this.date,
+                            updatedAt: this.date,
+                            versionNumber: 1,
+                            groupId: "All",
+                            type: "All"
+                        }
+                    );
+                }
+
                 return {
                     createdAt: this.date,
                     updatedAt: this.date,
@@ -1051,7 +1105,7 @@
                         context: this.context,
                         type: "private",
                         individualForSegment: [],
-                        groupForSegment: [],
+                        groupForSegment: groupForSegment,
                         subSegments: []
                     }
                 }
