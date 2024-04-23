@@ -284,7 +284,7 @@
 
         #experiment-settings-form {
             width: 450px;
-            height: 400px;
+            height: 430px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -293,7 +293,7 @@
 
         #selects-container {
             width: 100%;
-            height: 310px;
+            height: 350px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -478,6 +478,13 @@
                                 </select>
                             </div>
                             <div class="select-wrapper">
+                                <label for="experiment-type">Experiment Type:</label>
+                                <select name="experiment-type" class="select" id="experiment-type">
+                                    <option value="Simple Experiment" selected>Simple Experiment</option>
+                                    <!-- <option value="Factorial Experiment">Factorial Experiment</option> -->
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
                                 <label for="post-experiment-rule">Post Experiment Rule:</label>
                                 <select name="post-experiment-rule" class="select" id="post-experiment-rule">
                                     <option value="Continue" selected>Continue</option>
@@ -584,6 +591,7 @@
             const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
             const assignmentUnitSelect = document.getElementById("unit-of-assignment");
             const consistencyRuleSelect = document.getElementById("consistency-rule");
+            const experimentTypeSelect = document.getElementById("experiment-type");
             const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
             const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
             const statusUpdateDelay = document.getElementById("status-update-delay");
@@ -769,20 +777,43 @@
                 });
             }
 
+            async getVersion() {
+                const info = await this.fetchWrapper.get(`${this.hostUrl}/api`);
+                const parts = info.version.split(".");
+                return {
+                    full: info.version,
+                    major: parseInt(parts[0], 10),
+                    minor: parts[1] ? parseInt(parts[1], 10) : 0,
+                    bugfix: parts[2] ? parseInt(parts[2], 10) : 0
+                };
+            }
+
             async createExperiment() {
+                const version = await this.getVersion();
+                const backendVersion = version.full;
+                console.log("UpGrade Backend Version:", backendVersion);
+                const useReference = version.major >= 5 && version.minor >= 2 && version.bugfix >= 0; // Note: https://github.com/CarnegieLearningWeb/UpGrade/pull/1379
                 this.date = new Date().toISOString();
                 this.idGenerator.reset();
                 this.experimentId = this.idGenerator.uuidv4();
                 this.experimentStatus = "inactive";
                 const conditionIdMap = {};
                 for (const conditionCode of this.conditionCodes) {
-                    conditionIdMap[conditionCode] = this.idGenerator.uuidv4();
+                    conditionIdMap[conditionCode] = {
+                        id: this.idGenerator.uuidv4(),
+                        twoCharacterId: this.idGenerator.twoCharacterId()
+                    }
                 }
                 const payloadIdMap = {};
                 for (const conditionCode of this.conditionCodes) {
                     payloadIdMap[conditionCode] = this.idGenerator.uuidv4();
                 }
-                const decisionPointId = this.idGenerator.uuidv4();
+                const decisionPoint = { // Note: Currently, only one decision point is used
+                    id: this.idGenerator.uuidv4(),
+                    twoCharacterId: this.idGenerator.twoCharacterId(),
+                    site: `Site_${this.experimentId}`,
+                    target: `Target_${this.experimentId}`
+                };
                 const segmentNamePrefix = this.idGenerator.uuidv4();
                 await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, {
                     createdAt: this.date,
@@ -799,17 +830,17 @@
                     postExperimentRule: this.postExperimentRule,
                     enrollmentCompleteCondition: null,
                     endOn: null,
-                    revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode] : null : null,
+                    revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode].id : null : null,
                     tags: [],
                     group: this.assignmentUnit === "group" ? "add-group1" : null,
                     conditionOrder: null,
                     assignmentAlgorithm: "random",
                     logging: false,
                     filterMode: "includeAll",
-                    backendVersion: "5.1.0",
+                    backendVersion: backendVersion,
                     type: "Simple",
-                    partitions: this.makePartitions(decisionPointId),
-                    conditions: this.makeConditions(conditionIdMap, payloadIdMap),
+                    partitions: [this.makePartition(decisionPoint)],
+                    conditions: this.conditionCodes.map(conditionCode => this.makeCondition(conditionCode, conditionIdMap, payloadIdMap)),
                     conditionAliases: [],
                     stateTimeLogs: [],
                     queries: this.makeQueries(),
@@ -817,7 +848,7 @@
                     experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
                     factors: [],
                     stratificationFactor: null,
-                    conditionPayloads: this.makePayloads(decisionPointId, conditionIdMap, payloadIdMap)
+                    conditionPayloads: this.makePayloads(decisionPoint, conditionIdMap, payloadIdMap, useReference)
                 });
             }
 
@@ -989,56 +1020,50 @@
             }
 
             // Make data functions (Used by createExperiment())
-            makePartitions(decisionPointId) {
-                const partitions = [];
+            makePartition(decisionPoint) {
                 const partition = {
                     createdAt: this.date,
                     updatedAt: this.date,
                     versionNumber: 1,
-                    id: decisionPointId,
-                    twoCharacterId: this.idGenerator.twoCharacterId(),
-                    site: `Site_${this.experimentId}`,
-                    target: `Target_${this.experimentId}`,
+                    id: decisionPoint.id,
+                    twoCharacterId: decisionPoint.twoCharacterId,
+                    site: decisionPoint.site,
+                    target: decisionPoint.target,
                     description: "",
                     order: 1,
                     excludeIfReached: this.excludeIfReached
                 };
-                partitions.push(partition);
-                return partitions;
+                return partition;
             }
 
-            makeConditions(conditionIdMap, payloadIdMap) {
-                const conditions = [];
-                for (const conditionCode of this.conditionCodes) {
-                    const condition = {
-                        createdAt: this.date,
-                        updatedAt: this.date,
-                        versionNumber: 1,
-                        id: conditionIdMap[conditionCode],
-                        twoCharacterId: this.idGenerator.twoCharacterId(),
-                        name: "",
-                        description: null,
-                        conditionCode: conditionCode,
-                        assignmentWeight: 100 / this.conditionCodes.length,
-                        order: 1,
-                        conditionPayloads: [
-                            {
-                                createdAt: this.date,
-                                updatedAt: this.date,
-                                versionNumber: 1,
-                                id: payloadIdMap[conditionCode],
-                                payloadValue: conditionCode,
-                                payloadType: "string"
-                            }
-                        ],
-                        levelCombinationElements: []
-                    }
-                    conditions.push(condition);
+            makeCondition(conditionCode, conditionIdMap, payloadIdMap) {
+                const condition = {
+                    createdAt: this.date,
+                    updatedAt: this.date,
+                    versionNumber: 1,
+                    id: conditionIdMap[conditionCode].id,
+                    twoCharacterId: conditionIdMap[conditionCode].twoCharacterId,
+                    name: "",
+                    description: null,
+                    conditionCode: conditionCode,
+                    assignmentWeight: 100 / this.conditionCodes.length,
+                    order: 1,
+                    conditionPayloads: [
+                        {
+                            createdAt: this.date,
+                            updatedAt: this.date,
+                            versionNumber: 1,
+                            id: payloadIdMap[conditionCode],
+                            payloadValue: conditionCode,
+                            payloadType: "string"
+                        }
+                    ],
+                    levelCombinationElements: []
                 }
-                return conditions;
+                return condition;
             }
 
-            makePayloads(decisionPointId, conditionIdMap, payloadIdMap) {
+            makePayloads(decisionPoint, conditionIdMap, payloadIdMap, useReference) {
                 const payloads = [];
                 for (const conditionCode of this.conditionCodes) {
                     const payload = {
@@ -1046,8 +1071,8 @@
                         updatedAt: this.date,
                         versionNumber: 1,
                         id: payloadIdMap[conditionCode],
-                        parentCondition: conditionIdMap[conditionCode],
-                        decisionPoint: decisionPointId,
+                        parentCondition: useReference ? conditionIdMap[conditionCode].id : this.makeCondition(conditionCode, conditionIdMap, payloadIdMap),
+                        decisionPoint: useReference ? decisionPoint.id : this.makePartition(decisionPoint),
                         payload: {
                             type: "string",
                             value: conditionCode
