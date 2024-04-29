@@ -2,7 +2,7 @@
 <html lang="en-US">
 
 <head>
-    <title>UpGrade Tester v5.0.12 - Condition Rules</title>
+    <title>UpGrade Tester v1.1.7 - Condition Rules</title>
     <meta charset=utf-8 />
     <meta name="description" content="UpGrade Tester" />
     <meta name="keywords" content="UpGrade, Tester" />
@@ -284,7 +284,7 @@
 
         #experiment-settings-form {
             width: 450px;
-            height: 430px;
+            height: 400px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -293,7 +293,7 @@
 
         #selects-container {
             width: 100%;
-            height: 350px;
+            height: 310px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -433,7 +433,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@5.0.12/dist/browser/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/bundle.min.js"></script>
 </head>
 
 <body>
@@ -442,7 +442,7 @@
             <div id="title">
                 <img id="upgrade-logo" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
-                <h4 id="subtitle-text">v5.0.12 - Condition Rules</h4>
+                <h4 id="subtitle-text">v1.1.7 - Condition Rules</h4>
             </div>
         </div>
         <div id="main">
@@ -475,13 +475,6 @@
                                 <label for="consistency-rule">Consistency Rule:</label>
                                 <select name="consistency-rule" class="select" id="consistency-rule">
                                     <option value="Individual" selected>Individual</option>
-                                </select>
-                            </div>
-                            <div class="select-wrapper">
-                                <label for="experiment-type">Experiment Type:</label>
-                                <select name="experiment-type" class="select" id="experiment-type">
-                                    <option value="Simple Experiment" selected>Simple Experiment</option>
-                                    <!-- <option value="Factorial Experiment">Factorial Experiment</option> -->
                                 </select>
                             </div>
                             <div class="select-wrapper">
@@ -591,7 +584,6 @@
             const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
             const assignmentUnitSelect = document.getElementById("unit-of-assignment");
             const consistencyRuleSelect = document.getElementById("consistency-rule");
-            const experimentTypeSelect = document.getElementById("experiment-type");
             const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
             const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
             const statusUpdateDelay = document.getElementById("status-update-delay");
@@ -777,43 +769,15 @@
                 });
             }
 
-            async getVersion() {
-                const info = await this.fetchWrapper.get(`${this.hostUrl}/api`);
-                const parts = info.version.split(".");
-                return {
-                    full: info.version,
-                    major: parseInt(parts[0], 10),
-                    minor: parts[1] ? parseInt(parts[1], 10) : 0,
-                    bugfix: parts[2] ? parseInt(parts[2], 10) : 0
-                };
-            }
-
             async createExperiment() {
-                const version = await this.getVersion();
-                const backendVersion = version.full;
-                console.log("UpGrade Backend Version:", backendVersion);
-                const useReference = version.major >= 5 && version.minor >= 2 && version.bugfix >= 0; // Note: https://github.com/CarnegieLearningWeb/UpGrade/pull/1379
                 this.date = new Date().toISOString();
                 this.idGenerator.reset();
                 this.experimentId = this.idGenerator.uuidv4();
                 this.experimentStatus = "inactive";
                 const conditionIdMap = {};
                 for (const conditionCode of this.conditionCodes) {
-                    conditionIdMap[conditionCode] = {
-                        id: this.idGenerator.uuidv4(),
-                        twoCharacterId: this.idGenerator.twoCharacterId()
-                    }
+                    conditionIdMap[conditionCode] = this.idGenerator.uuidv4();
                 }
-                const payloadIdMap = {};
-                for (const conditionCode of this.conditionCodes) {
-                    payloadIdMap[conditionCode] = this.idGenerator.uuidv4();
-                }
-                const decisionPoint = { // Note: Currently, only one decision point is used
-                    id: this.idGenerator.uuidv4(),
-                    twoCharacterId: this.idGenerator.twoCharacterId(),
-                    site: `Site_${this.experimentId}`,
-                    target: `Target_${this.experimentId}`
-                };
                 const segmentNamePrefix = this.idGenerator.uuidv4();
                 await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, {
                     createdAt: this.date,
@@ -825,30 +789,25 @@
                     context: [this.context],
                     state: "inactive",
                     startOn: null,
-                    consistencyRule: this.consistencyRule,
                     assignmentUnit: this.assignmentUnit,
+                    consistencyRule: this.consistencyRule,
                     postExperimentRule: this.postExperimentRule,
+                    type: "Simple",
                     enrollmentCompleteCondition: null,
                     endOn: null,
-                    revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode].id : null : null,
+                    revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode] : null : null,
                     tags: [],
                     group: this.assignmentUnit === "group" ? "add-group1" : null,
-                    conditionOrder: null,
-                    assignmentAlgorithm: "random",
                     logging: false,
                     filterMode: "includeAll",
-                    backendVersion: backendVersion,
-                    type: "Simple",
-                    partitions: [this.makePartition(decisionPoint)],
-                    conditions: this.conditionCodes.map(conditionCode => this.makeCondition(conditionCode, conditionIdMap, payloadIdMap)),
+                    backendVersion: "1.0.0",
+                    partitions: this.makePartitions(),
+                    conditions: this.makeConditions(conditionIdMap),
                     conditionAliases: [],
                     stateTimeLogs: [],
                     queries: this.makeQueries(),
                     experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
-                    experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
-                    factors: [],
-                    stratificationFactor: null,
-                    conditionPayloads: this.makePayloads(decisionPoint, conditionIdMap, payloadIdMap, useReference)
+                    experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion")
                 });
             }
 
@@ -965,37 +924,37 @@
             }
 
             async visitDecisionPoint(studentName, studentId, group) {
+                // Note: Later, this should be done in https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/upgrade-client-lib.min.js
                 const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
-                const upClient = new UpgradeClient(studentId, this.hostUrl, this.context);
+
+                // Note: Wouldn't it make more sense to require the studentId in init() so the upClient can be reused/reinited?
+                const upClient = new UpgradeClient(studentId, this.hostUrl);
                 const initStartTime = Date.now();
                 await upClient.init();
                 this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
                 if (group) {
-                    const groupMembership = {
-                        "add-group1":  ["Group A", "Group B"]
-                    }
-                    const workingGroup = {
-                        "add-group1": group
-                    }
+                    // Note: init(), setGroupMembership(), and setWorkingGroup() should accept object type instead of map (https://github.com/CarnegieLearningWeb/UpGrade/issues/148)
+                    const groupMembership = new Map();
+                    groupMembership.set("add-group1", ["Group A", "Group B"]);
+                    const workingGroup = new Map();
+                    workingGroup.set("add-group1", group);
                     await upClient.setGroupMembership(groupMembership);
                     await upClient.setWorkingGroup(workingGroup);
+                    // Note: init(groupMembership, workingGroup) doesn't seem to work
                 }
                 const experimentSite = `Site_${this.experimentId}`;
                 const experimentTarget = `Target_${this.experimentId}`;
                 const assignStartTime = Date.now();
-                const assignment = await upClient.getDecisionPointAssignment(experimentSite, experimentTarget);
+                const experimentCondition = await upClient.getExperimentCondition(this.context, experimentSite, experimentTarget); // Note: it might be better if it returns assignedCondition instead of the object that contains it
                 this.responseTimeCellMap.assign.responseTimes.push(Date.now() - assignStartTime);
                 let conditionCode = null;
-                let markStatus = "no condition assigned";
-                if (assignment !== null) {
-                    markStatus = "condition applied";
-                    conditionCode = assignment.getCondition();
-                    if (!this.conditionCodes.includes(conditionCode)) {
-                        markStatus = "condition not applied";
-                    }
+                if (experimentCondition) { // Note: It would be cleaner to write code if getExperimentCondition() always returns an object instead of null 
+                    conditionCode = experimentCondition.assignedCondition.conditionCode;
                 }
+                // Note: If markExperimentPoint() is always required after calling getExperimentCondition(), do we really need to separate the two?
+                // In what use cases do we call getExperimentCondition() and not call markExperimentPoint()?
                 const markStartTime = Date.now();
-                await assignment.markDecisionPoint(markStatus);
+                await upClient.markExperimentPoint(experimentSite, conditionCode, experimentTarget);
                 this.responseTimeCellMap.mark.responseTimes.push(Date.now() - markStartTime);
 
                 // Update the condition cells
@@ -1020,67 +979,42 @@
             }
 
             // Make data functions (Used by createExperiment())
-            makePartition(decisionPoint) {
+            makePartitions() {
+                const partitions = [];
                 const partition = {
                     createdAt: this.date,
                     updatedAt: this.date,
                     versionNumber: 1,
-                    id: decisionPoint.id,
-                    twoCharacterId: decisionPoint.twoCharacterId,
-                    site: decisionPoint.site,
-                    target: decisionPoint.target,
+                    id: this.idGenerator.uuidv4(),
+                    twoCharacterId: this.idGenerator.twoCharacterId(),
+                    site: `Site_${this.experimentId}`,
+                    target: `Target_${this.experimentId}`,
                     description: "",
-                    order: 1,
-                    excludeIfReached: this.excludeIfReached
+                    excludeIfReached: this.excludeIfReached,
+                    order: 1
                 };
-                return partition;
+                partitions.push(partition);
+                return partitions;
             }
 
-            makeCondition(conditionCode, conditionIdMap, payloadIdMap) {
-                const condition = {
-                    createdAt: this.date,
-                    updatedAt: this.date,
-                    versionNumber: 1,
-                    id: conditionIdMap[conditionCode].id,
-                    twoCharacterId: conditionIdMap[conditionCode].twoCharacterId,
-                    name: "",
-                    description: null,
-                    conditionCode: conditionCode,
-                    assignmentWeight: 100 / this.conditionCodes.length,
-                    order: 1,
-                    conditionPayloads: [
-                        {
-                            createdAt: this.date,
-                            updatedAt: this.date,
-                            versionNumber: 1,
-                            id: payloadIdMap[conditionCode],
-                            payloadValue: conditionCode,
-                            payloadType: "string"
-                        }
-                    ],
-                    levelCombinationElements: []
-                }
-                return condition;
-            }
-
-            makePayloads(decisionPoint, conditionIdMap, payloadIdMap, useReference) {
-                const payloads = [];
+            makeConditions(conditionIdMap) {
+                const conditions = [];
                 for (const conditionCode of this.conditionCodes) {
-                    const payload = {
+                    const condition = {
                         createdAt: this.date,
                         updatedAt: this.date,
                         versionNumber: 1,
-                        id: payloadIdMap[conditionCode],
-                        parentCondition: useReference ? conditionIdMap[conditionCode].id : this.makeCondition(conditionCode, conditionIdMap, payloadIdMap),
-                        decisionPoint: useReference ? decisionPoint.id : this.makePartition(decisionPoint),
-                        payload: {
-                            type: "string",
-                            value: conditionCode
-                        }
+                        id: conditionIdMap[conditionCode],
+                        twoCharacterId: this.idGenerator.twoCharacterId(),
+                        name: "",
+                        description: null,
+                        conditionCode: conditionCode,
+                        assignmentWeight: 100 / this.conditionCodes.length,
+                        order: 1
                     }
-                    payloads.push(payload);
+                    conditions.push(condition);
                 }
-                return payloads;
+                return conditions;
             }
 
             makeQueries() {
@@ -1112,19 +1046,6 @@
 
             makeExperimentSegment(segmentNamePrefix, type) {
                 const name = `${segmentNamePrefix} ${type} Segment`;
-                const groupForSegment = [];
-                if (type === "Inclusion") {
-                    groupForSegment.push(
-                        {
-                            createdAt: this.date,
-                            updatedAt: this.date,
-                            versionNumber: 1,
-                            groupId: "All",
-                            type: "All"
-                        }
-                    );
-                }
-
                 return {
                     createdAt: this.date,
                     updatedAt: this.date,
@@ -1139,7 +1060,7 @@
                         context: this.context,
                         type: "private",
                         individualForSegment: [],
-                        groupForSegment: groupForSegment,
+                        groupForSegment: [],
                         subSegments: []
                     }
                 }
