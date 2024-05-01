@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>UpGrade Tester v5.0.12 - Enrollment</title>
+    <meta charset=utf-8 />
+    <meta name="description" content="UpGrade Tester" />
+    <meta name="keywords" content="UpGrade, Tester" />
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, minimum-scale=0.6, maximum-scale=0.6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&amp;lang=en" />
+    <link rel="icon" type="image/x-icon" href="https://upgrade-demo.carnegielearning.com/asset/favicon/favicon.ico" />
+    <style>
+        /* ==================== universal ==================== */
+
+        * {
+            padding: 0;
+            margin: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font-family: 'Open Sans', sans-serif;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
+            background: #F0F2F8;
+        }
+
+        button,
+        select,
+        input {
+            border-radius: 5px;
+            font-size: 16px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        button {
+            border: none;
+            font-weight: 600;
+            color: #FFFFFF;
+            cursor: pointer;
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        i {
+            margin-right: 10px;
+        }
+
+        label {
+            font-size: 16px;
+            font-weight: 700;
+            color: #444444;
+        }
+
+        select,
+        input {
+            text-indent: 10px;
+            border: 1px solid #808080;
+            font-weight: 400;
+            color: #444444;
+            box-shadow: none;
+        }
+
+        select {
+            background: url("https://upgrade-demo.carnegielearning.com/asset/image/down-icon.png");
+            background-repeat: no-repeat;
+            background-position: right;
+            background-size: 20px;
+        }
+
+        select:focus,
+        input:focus {
+            outline: 0;
+            border-color: rgb(163, 197, 255);
+            border: 1px solid rgb(163, 197, 255);
+            -webkit-box-shadow: 0 0 5px rgb(163, 197, 255);
+            -moz-box-shadow: 0 0 5px rgb(163, 197, 255);
+            box-shadow: 0 0 5px rgb(163, 197, 255);
+        }
+
+        strong {
+            font-weight: 700;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 16px;
+            text-align: center;
+            color: #444444;
+        }
+
+        table tr th,
+        table tr td {
+            width: 120px;
+            height: 60px;
+            border-right: 1px solid #808080;
+            border-bottom: 1px solid #808080;
+        }
+
+        table tr th:first-child,
+        table tr td:first-child {
+            font-weight: bold;
+            background: #F0F2F8;
+            border-left: 1px solid #808080;
+        }
+
+        table tr th {
+            font-weight: bold;
+            background: #F0F2F8;
+            border-top: solid 1px #808080;
+        }
+
+        table tr:first-child th:first-child {
+            border-top-left-radius: 5px;
+        }
+
+        table tr:first-child th:last-child {
+            border-top-right-radius: 5px;
+        }
+
+        table tr:last-child td:first-child {
+            border-bottom-left-radius: 5px;
+        }
+
+        table tr:last-child td:last-child {
+            border-bottom-right-radius: 5px;
+        }
+
+        .shadowed {
+            -webkit-box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.25);
+            -moz-box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.25);
+            box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.25);
+        }
+
+        .unselectable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .recolor-444444 {
+            -webkit-filter: invert(22%) sepia(0%) saturate(2%) hue-rotate(243deg) brightness(104%) contrast(87%);
+            filter: invert(22%) sepia(0%) saturate(2%) hue-rotate(243deg) brightness(104%) contrast(87%);
+        }
+
+        /* ==================== wrapper ==================== */
+
+        #wrapper {
+            width: 100%;
+            min-width: 500px;
+            height: 100%;
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        /* ==================== header ==================== */
+
+        #header {
+            width: 100%;
+            height: 88px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background: #FFFFFF;
+        }
+
+        #title {
+            margin-left: 30px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #upgrade-logo {
+            width: 28px;
+            height: 27px;
+        }
+
+        #title-text {
+            margin-left: 10px;
+            font-size: 28px;
+            font-weight: 800;
+            color: #3F68F6;
+        }
+
+        #subtitle-text {
+            margin-top: 12px;
+            margin-left: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #3F68F6;
+        }
+
+        /* ==================== main ==================== */
+
+        #main {
+            margin-top: 6px;
+            width: calc(100% - 12px);
+            height: calc(100% - 88px - 12px);
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        /* ==================== card-wrapper ==================== */
+
+        .card-wrapper {
+            width: 100%;
+            height: 100%;
+            border-radius: 5px;
+            background: #FFFFFF;
+        }
+
+        /* ==================== card-header ==================== */
+
+        .card-header {
+            width: 100%;
+            height: 60px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            border-bottom: solid 1px #B7B9BC;
+        }
+
+        .card-title {
+            width: 100%;
+            height: calc(100% - 3px);
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-icon {
+            width: 23px;
+            height: 23px;
+        }
+
+        #upgrade-icon {
+            margin-right: -4px;
+            margin-top: 4px;
+            width: 26px;
+            height: 29px;
+        }
+
+        .card-text {
+            margin-left: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #444444;
+        }
+
+        /* ==================== card-content ==================== */
+
+        .card-content {
+            width: 100%;
+            height: calc(100% - 60px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ==================== enrollment-settings-form ==================== */
+
+        #enrollment-settings-form {
+            width: 500px;
+            height: 430px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #selects-container {
+            width: 100%;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            position: relative; 
+            display: inline-block; 
+        }
+
+        .input-wrapper input { 
+            padding-right: 30px; 
+        }
+
+        .input-wrapper button {
+            width: 28px;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            color: #808080;
+        }
+
+        .select {
+            width: 360px;
+            height: 35px;
+            background-position-x: calc(360px - 30px);
+        }
+
+        #button-wrapper {
+            width: 500px;
+            height: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #enroll-user-button {
+            width: 100%;
+            height: 100%;
+            background: #3F68F6;
+            opacity: 1;
+            -webkit-transition: opacity 0.25s;
+            -moz-transition: opacity 0.25s;
+            transition: opacity 0.25s;
+            cursor: pointer;
+        }
+
+        #enroll-user-button:hover {
+            background: #325BE9;
+        }
+
+        #enroll-user-button:active {
+            background: #264FDD;
+        }
+
+        #enroll-user-button:disabled {
+            background: #3F68F6;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* ==================== table ==================== */
+
+        #table-wrapper {
+            width: 500px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #808080; 
+            border-radius: 5px;
+        }
+
+        .table-row {
+            width: 100%;
+            min-height: 45px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #C8C8C8;
+        }
+
+        .table-col1, .table-col2, .table-col3 {
+            margin-left: 16px;
+        }
+
+        .table-col1 {
+            width: 120px;
+        }
+
+        .table-col2 {
+            width: calc(500px - 120px - 16px - 32px);
+        }
+
+        #log-rows-wrapper .table-col2 {
+            width: calc(500px - 120px);
+            padding-right: 4px;
+        }
+
+        .table-col3 {
+            width: 32px;
+        }
+
+        .fixed-text {
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 22px;
+            color: #444444;
+        }
+
+        .table-text {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 22px;
+            color: #444444;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .table-col3 p {
+            color: #F6683F;
+        }
+
+        .table-col3 p:hover {
+            color: #E95B32;
+        }
+
+        .table-col3 p:active {
+            color: #DD4F26;
+        }
+
+        .table-col3 .fixed-text {
+            cursor: pointer;
+        }
+
+        #table-top {
+            height: 60px;
+            border-radius: 5px 5px 0px 0px;
+            background: #FFF0E6;
+            border-bottom: 1px solid #808080;
+        }
+
+        #table-middle {
+            width: 100%;
+            height: 440px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rows-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 4px;
+        }
+
+        /* ==================== table loading ==================== */
+
+        #table-overlay {
+            position: absolute;
+            width: calc(50% - 6px);
+            height: calc(100% - 88px - 12px - 60px);
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 5px;
+            opacity: 0;
+            -webkit-transition: opacity 0.25s;
+            -moz-transition: opacity 0.25s;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+
+        #loading-spinner {
+            position: absolute;
+            animation: loading 1s linear infinite;
+            border: solid 7px transparent;
+            border-top: solid 7px #90EAD8;
+            border-bottom: solid 7px #90EAD8;
+            border-radius: 50px;
+            width: 100px;
+            height: 100px;
+            opacity: 0;
+            -webkit-transition: opacity 0.25s;
+            -moz-transition: opacity 0.25s;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ==================== bottom-gap ==================== */
+
+        #bottom-gap {
+            display: none;
+            width: 100%;
+            height: 2px;
+        }
+
+        @media screen and (max-width: calc(512px * 2 + 6px * 3)) {
+            #main {
+                flex-wrap: wrap;
+            }
+
+            #bottom-gap {
+                display: inline-block;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@5.0.12/dist/browser/index.js"></script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="header" class="shadowed">
+            <div id="title">
+                <img id="upgrade-logo" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-logo.png" alt="UpGrade Logo">
+                <h2 id="title-text">UpGrade Tester</h2>
+                <h4 id="subtitle-text">v5.0.12 - Enrollment</h4>
+            </div>
+        </div>
+        <div id="main">
+            <div class="card-wrapper shadowed">
+                <div class="card-header">
+                    <div class="card-title">
+                        <img class="card-icon recolor-444444" id="upgrade-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-icon.png" alt="UpGrade Icon">
+                        <h4 class="card-text">Enrollment Settings</h4>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <form id="enrollment-settings-form" spellcheck="false">
+                        <div id="selects-container">
+                            <div class="select-wrapper">
+                                <label for="host-url">Host URL:</label>
+                                <select name="host-url" class="select" id="host-url">
+                                    <option value="http://localhost:3030" selected>http://localhost:3030</option>
+                                    <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
+                                    <option value="https://upgradeapi.qa-cli.net">https://upgradeapi.qa-cli.net</option>
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="experiment">Experiment:</label>
+                                <select name="experiment" class="select" id="experiment">
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="decision-point">Decision Point:</label>
+                                <select name="decision-point" class="select" id="decision-point">
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="user-id">User ID:</label>
+                                <div class="input-wrapper">
+                                    <input type="text" name="user-id" class="select" id="user-id">
+                                    <button id="generate-user-id-button"><i class="fa fa-refresh fa-sm"></i></button>
+                                </div>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="group-type">Group Type:</label>
+                                <select name="group-type" class="select" id="group-type">
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="group-id">Group ID:</label>
+                                <div class="input-wrapper">
+                                    <input type="text" name="group-id" class="select" id="group-id">
+                                    <button id="generate-group-id-button"><i class="fa fa-refresh fa-sm"></i></button>
+                                </div>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="mark-decision-point">Mark:</label>
+                                <select name="mark-decision-point" class="select" id="mark-decision-point">
+                                    <option value="False" selected>False</option>
+                                    <option value="True">True</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="button-wrapper">
+                            <button id="enroll-user-button" class="unselectable" type="submit" disabled><i class="fa fa-rocket fa-lg"></i>Enroll User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card-wrapper shadowed">
+                <div class="card-header">
+                    <div class="card-title">
+                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/dev-console-icon.png" alt="Dev Console Icon">
+                        <h4 class="card-text">Enrollment Logs</h4>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="table-wrapper">
+                        <div class="table-row" id="table-top">
+                            <div class="table-col1">
+                                <p class="fixed-text">Date/Time</p>
+                            </div>
+                            <div class="table-col2">
+                                <p class="fixed-text">Message</p>
+                            </div>
+                            <div class="table-col3">
+                                <p class="fixed-text unselectable"><i class="fa fa-trash fa-lg"></i></p>
+                            </div>
+                        </div>
+                        <div id="table-middle">
+                            <div class="rows-wrapper" id="log-rows-wrapper">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="bottom-gap"></div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener("load", async () => {
+            const enrollmentSettings = {
+                enrollmentSettingsForm: document.getElementById("enrollment-settings-form"),
+                hostUrlSelect: document.getElementById("host-url"),
+                experimentSelect: document.getElementById("experiment"),
+                decisionPointSelect: document.getElementById("decision-point"),
+                userIdInput: document.getElementById("user-id"),
+                generateUserIdButton: document.getElementById("generate-user-id-button"),
+                groupTypeSelect: document.getElementById("group-type"),
+                groupIdInput: document.getElementById("group-id"),
+                generateGroupIdButton: document.getElementById("generate-group-id-button"),
+                markDecisionPointSelect: document.getElementById("mark-decision-point"),
+                enrollUserButton: document.getElementById("enroll-user-button"),
+                clearLogsButton: document.querySelectorAll("#table-top .fixed-text")[2],
+                logRowsWrapper: document.getElementById("log-rows-wrapper"),
+            }
+            try {
+                const tester = new UpGradeTester(enrollmentSettings);
+                await tester.init();
+            } catch (error) {
+                console.error(`${error.name}: ${error.message}`);
+                alert(`${error.name}: ${error.message}`);
+            }
+        });
+
+        class UpGradeTester {
+            constructor(enrollmentSettings) {
+                this.enrollmentSettingsForm = enrollmentSettings.enrollmentSettingsForm;
+                this.hostUrlSelect = enrollmentSettings.hostUrlSelect;
+                this.experimentSelect = enrollmentSettings.experimentSelect;
+                this.decisionPointSelect = enrollmentSettings.decisionPointSelect;
+                this.userIdInput = enrollmentSettings.userIdInput;
+                this.generateUserIdButton = enrollmentSettings.generateUserIdButton;
+                this.groupTypeSelect = enrollmentSettings.groupTypeSelect;
+                this.groupIdInput = enrollmentSettings.groupIdInput;
+                this.generateGroupIdButton = enrollmentSettings.generateGroupIdButton;
+                this.markDecisionPointSelect = enrollmentSettings.markDecisionPointSelect;
+                this.enrollUserButton = enrollmentSettings.enrollUserButton;
+                this.clearLogsButton = enrollmentSettings.clearLogsButton;
+                this.logRowsWrapper = enrollmentSettings.logRowsWrapper;
+                this.fetchWrapper = new FetchWrapper();
+                this.idGenerator = new IdGenerator();
+                this.allExperiments = [];
+                this.selectedExperiment = null;
+                this.allDecisionPoints = [];
+                this.selectedDecisionPoint = null;
+
+                // Bind the listeners
+                this.hostUrlSelect.onchange = this.onHostUrlSelectChange.bind(this);
+                this.experimentSelect.onchange = this.onExperimentSelectChange.bind(this);
+                this.decisionPointSelect.onchange = this.onDecisionPointSelectChange.bind(this);
+                this.generateUserIdButton.onclick = this.onGenerateUserIdButtonClick.bind(this);
+                this.generateGroupIdButton.onclick = this.onGenerateGroupIdButtonClick.bind(this);
+                this.enrollmentSettingsForm.onsubmit = this.onEnrollmentSettingsFormSubmit.bind(this);
+                this.clearLogsButton.onclick = this.onClearLogsButtonClick.bind(this);
+            }
+
+            async init() {
+                this.enrollUserButton.disabled = true;
+                await this.setExperimentSelectOptions();
+                this.setDecisionPointSelectOptions();
+                await this.setGroupTypeSelectOptions();
+                this.generateUserId();
+                this.generateGroupId();
+                if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
+                    return;
+                }
+                this.enrollUserButton.disabled = false;
+            }
+
+            async setExperimentSelectOptions() {
+                this.allExperiments = [];
+                this.selectedExperiment = null;
+                this.experimentSelect.options.length = 0;
+                const experiments = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments`);
+                for (const experiment of experiments) {
+                    const option = document.createElement("option");
+                    option.text = experiment.name;
+                    option.value = experiment.id;
+                    this.experimentSelect.add(option);
+                    this.allExperiments.push(experiment);
+                }
+                if (this.experimentSelect.options.length && this.allExperiments.length) {
+                    this.experimentSelect.options[0].selected = true;
+                    this.selectedExperiment = this.allExperiments[0];
+                }
+            }
+
+            setDecisionPointSelectOptions() {
+                this.allDecisionPoints = [];
+                this.selectedDecisionPoint = null;
+                this.decisionPointSelect.options.length = 0;
+                if (this.selectedExperiment == null) {
+                    return;
+                }
+                for (const partition of this.selectedExperiment.partitions) {
+                    const option = document.createElement("option");
+                    option.text = `${partition.site}; ${partition.target}`;
+                    option.value = partition.id;
+                    this.decisionPointSelect.add(option);
+                    this.allDecisionPoints.push({
+                        site: partition.site,
+                        target: partition.target
+                    });
+                }
+                if (this.decisionPointSelect.options.length && this.allDecisionPoints.length) {
+                    this.decisionPointSelect.options[0].selected = true;
+                    this.selectedDecisionPoint = this.allDecisionPoints[0];
+                }
+            }
+
+            async setGroupTypeSelectOptions() {
+                this.groupTypeSelect.options.length = 0;
+                if (this.selectedExperiment == null) {
+                    return;
+                }
+                const { contextMetadata } = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments/contextMetadata`);
+                const appContext = this.selectedExperiment.context[0];
+                if (!(appContext in contextMetadata)) {
+                    return;
+                }
+                for (const groupType of contextMetadata[appContext].GROUP_TYPES) {
+                    const option = document.createElement("option");
+                    option.text = groupType;
+                    option.value = groupType;
+                    this.groupTypeSelect.add(option);
+                }
+                if (this.groupTypeSelect.options.length) {
+                    this.groupTypeSelect.options[0].selected = true;
+                }
+            }
+
+            generateUserId() {
+                this.userIdInput.value = this.idGenerator.uuidv4();
+            }
+
+            generateGroupId() {
+                this.groupIdInput.value = this.idGenerator.uuidv4();
+            }
+
+            async onHostUrlSelectChange() {
+                try {
+                    await this.init();
+                } catch (error) {
+                    console.error(`${error.name}: ${error.message}`);
+                    alert(`${error.name}: ${error.message}`);
+                }
+            }
+
+            onExperimentSelectChange() {
+                if (this.experimentSelect.options.selectedIndex < this.allExperiments.length) {
+                    this.selectedExperiment = this.allExperiments[this.experimentSelect.options.selectedIndex];
+                    this.setDecisionPointSelectOptions();
+                }
+            }
+
+            onDecisionPointSelectChange() {
+                if (this.decisionPointSelect.options.selectedIndex < this.allDecisionPoints.length) {
+                    this.selectedDecisionPoint = this.allDecisionPoints[this.decisionPointSelect.options.selectedIndex];
+                }
+            }
+
+            onGenerateUserIdButtonClick(event) {
+                event.preventDefault();
+                this.generateUserId();
+            }
+
+            onGenerateGroupIdButtonClick(event) {
+                event.preventDefault();
+                this.generateGroupId();
+            }
+
+            async onEnrollmentSettingsFormSubmit(event) {
+                event.preventDefault();
+                if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
+                    return;
+                }
+                try {
+                    // Get settings
+                    const hostUrl = this.hostUrlSelect.value;
+                    const context = this.selectedExperiment.context[0];
+                    const site = this.selectedDecisionPoint.site;
+                    const target = this.selectedDecisionPoint.target;
+                    const userId = this.userIdInput.value;
+                    const groupType = this.groupTypeSelect.value;
+                    const groupId = this.groupIdInput.value;
+                    const markDecisionPoint = this.markDecisionPointSelect.value === "True";
+
+                    // Visit decision point
+                    const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
+                    const upClient = new UpgradeClient(userId, hostUrl, context);
+                    console.log("Initializing clientlib:", {userId, hostUrl, context});
+                    await upClient.init();
+                    const groupMembership = {
+                        [groupType]: [groupId]
+                    }
+                    const workingGroup = {
+                        [groupType]: groupId
+                    }
+                    console.log("Setting group membership:", groupMembership);
+                    await upClient.setGroupMembership(groupMembership);
+                    console.log("Setting working group:", workingGroup);
+                    await upClient.setWorkingGroup(workingGroup);
+                    console.log("Getting decision point assignment:", {site, target});
+                    const assignment = await upClient.getDecisionPointAssignment(site, target);
+                    this.addLogMessage(`The user <strong>${userId}</strong> reached the decision point <strong>${site}; ${target}</strong>`);
+                    let conditionCode = null;
+                    let markStatus = "no condition assigned";
+                    if (assignment !== null) {
+                        markStatus = "condition applied";
+                        conditionCode = assignment.getCondition();
+                    }
+                    console.log("Received condition:", {conditionCode});
+                    this.addLogMessage(`The user <strong>${userId}</strong> received the condition <strong>${conditionCode}</strong>`);
+                    if (!markDecisionPoint) {
+                        return;
+                    }
+                    console.log("Marking decision point:", {markStatus});
+                    await assignment.markDecisionPoint(markStatus);
+                    this.addLogMessage(`The user <strong>${userId}</strong> marked with a status <strong>${markStatus}</strong>`);
+                } catch (error) {
+                    console.error(`${error.name}: ${error.message}`);
+                    alert(`${error.name}: ${error.message}`);
+                }
+            }
+
+            addLogMessage(message) {
+                this.logRowsWrapper.innerHTML +=
+                    `
+                    <div class="table-row">
+                        <div class="table-col1">
+                            <p class="table-text">${new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", hour: "numeric", minute: "numeric" }).format(new Date())}</p>
+                        </div>
+                        <div class="table-col2">
+                            <p class="table-text">${message}</p>
+                        </div>
+                    </div>
+                    `;
+                this.logRowsWrapper.scrollTop = this.logRowsWrapper.scrollHeight;
+            }
+
+            onClearLogsButtonClick() {
+                this.logRowsWrapper.innerHTML = "";
+            }
+        }
+
+        class FetchWrapper {
+            constructor() {
+                this.headers = {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                };
+            }
+
+            async getData(response) {
+                const data = await response.json();
+                if (data.error) {
+                    throw data.error;
+                }
+                return data;
+            }
+
+            async fetchGetDelete(url, method) {
+                const response = await fetch(url, {
+                    method,
+                    headers: this.headers
+                });
+                return await this.getData(response);
+            }
+
+            async fetchPostPut(url, method, data = {}) {
+                const response = await fetch(url, {
+                    method,
+                    headers: this.headers,
+                    body: JSON.stringify(data)
+                });
+                return await this.getData(response);
+            }
+
+            async get(url) {
+                return await this.fetchGetDelete(url, "GET");
+            }
+
+            async post(url, data) {
+                return await this.fetchPostPut(url, "POST", data);
+            }
+
+            async put(url, data) {
+                return await this.fetchPostPut(url, "PUT", data);
+            }
+
+            async delete(url) {
+                return await this.fetchGetDelete(url, "DELETE");
+            }
+        }
+
+        class IdGenerator {
+            constructor() {
+                this.twoCharacterIdSet = new Set();
+                this.numCombinations = 36 * 36;
+            }
+
+            reset() {
+                this.twoCharacterIdSet.clear();
+            }
+
+            twoCharacterId() { // Note: UpGrade's twoCharacterId() function should be updated like this to prevent freezing
+                while (this.twoCharacterIdSet.size < this.numCombinations) {
+                    const id = Math.random().toString(36).substring(2, 4).toUpperCase();
+                    if (!this.twoCharacterIdSet.has(id)) {
+                        this.twoCharacterIdSet.add(id);
+                        return id;
+                    }
+                }
+                throw "twoCharacterId exceeded the limit";
+            }
+
+            uuidv4() {
+                return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+            }
+        }
+    </script>
+</body>
+
+</html>
