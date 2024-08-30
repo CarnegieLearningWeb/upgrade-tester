@@ -177,10 +177,10 @@
             justify-content: space-between;
             align-items: center;
             background: #FFFFFF;
+            padding: 0 30px;
         }
 
         #title {
-            margin-left: 30px;
             display: flex;
             flex-direction: row;
             justify-content: center;
@@ -342,6 +342,12 @@
             background: #264FDD;
         }
 
+        #runtest-button:disabled {
+            background: #3F68F6;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
         /* ==================== tables ==================== */
 
         #conditions-table {
@@ -434,6 +440,11 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/bundle.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <div id="g_id_onload"
+        data-client_id="656936260684-hdsihcgcdrcbeom72n56o8n5rb2mtc58.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse">
+    </div>
 </head>
 
 <body>
@@ -444,6 +455,7 @@
                 <h2 id="title-text">UpGrade Tester</h2>
                 <h4 id="subtitle-text">v1.1.7 - Condition Rules</h4>
             </div>
+            <div class="g_id_signin" data-type="standard"></div>
         </div>
         <div id="main">
             <div class="card-wrapper shadowed">
@@ -459,9 +471,9 @@
                             <div class="select-wrapper">
                                 <label for="upgrade-host-url">UpGrade Host URL:</label>
                                 <select name="upgrade-host-url" class="select" id="upgrade-host-url">
-                                    <option value="http://localhost:3030" selected>http://localhost:3030</option>
+                                    <option value="https://upgradeapi.qa-cli.net" selected>https://upgradeapi.qa-cli.net</option>
                                     <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
-                                    <option value="https://upgradeapi.qa-cli.net">https://upgradeapi.qa-cli.net</option>
+                                    <option value="http://localhost:3030">http://localhost:3030</option>
                                 </select>
                             </div>
                             <div class="select-wrapper">
@@ -499,7 +511,7 @@
                             </div>
                         </div>
                         <div id="button-wrapper">
-                            <button id="runtest-button" class="unselectable" type="submit"><i class="fa fa-rocket fa-lg"></i>Run Test</button>
+                            <button id="runtest-button" class="unselectable" type="submit" disabled><i class="fa fa-rocket fa-lg"></i>Run Test</button>
                         </div>
                     </form>
                 </div>
@@ -579,571 +591,593 @@
     </div>
 
     <script>
-        window.addEventListener("load", async () => {
-            const experimentSettingsForm = document.getElementById("experiment-settings-form");
-            const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
-            const assignmentUnitSelect = document.getElementById("unit-of-assignment");
-            const consistencyRuleSelect = document.getElementById("consistency-rule");
-            const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
-            const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
-            const statusUpdateDelay = document.getElementById("status-update-delay");
-            const runTestButton = document.getElementById("runtest-button");
-            const conditionsTable = document.getElementById("conditions-table");
-            const studentCells = conditionsTable.getElementsByClassName("student-cell");
-            const conditionCells = conditionsTable.getElementsByClassName("condition-cell");
-            const responseTimeTable = document.getElementById("response-time-table");
-            const responseTimeCells = responseTimeTable.getElementsByClassName("response-time-cell");
-            const tableOverlay = document.getElementById("table-overlay");
-            const loadingSpinner = document.getElementById("loading-spinner");
+        (function() {
+            let token = null;
 
-            assignmentUnitSelect.addEventListener("change", () => {
-                if (assignmentUnitSelect.value === "Individual") {
-                    consistencyRuleSelect.innerHTML = `
-                        <option value="Individual">Individual</option>`;
-                } else if (assignmentUnitSelect.value === "Group") {
-                    consistencyRuleSelect.innerHTML = `
-                        <option value="Individual">Individual</option>
-                        <option value="Group">Group</option>`;
-                }
-                for (let i = 0; i < studentCells.length; i++) {
-                    studentCells[i].innerText = `Student ${i + 1} (${assignmentUnitSelect.value === "Individual" ? "Individual" : `Group ${i < 3 ? "A" : "B"}`})`;
-                }
-            });
+            // Handle successful login
+            window.handleCredentialResponse = (response) => {
+                // Retrieve token
+                token = response.credential;
+                const signInButton = document.querySelector(".g_id_signin");
+                const runTestButton = document.getElementById("runtest-button");
 
-            // Called on run test button click
-            let isLoading = false;
-            experimentSettingsForm.addEventListener("submit", async (event) => {
-                const setLoadingState = (state) => {
-                    isLoading = state;
-                    runTestButton.style.pointerEvents = state ? "none" : "auto";
-                    runTestButton.style.opacity = state ? 0.7 : 1;
-                    tableOverlay.style.opacity = state ? 1 : 0;
-                    loadingSpinner.style.opacity = state ? 1 : 0;
-                }
-                try {
-                    event.preventDefault();
-                    if (isLoading) {
-                        return;
+                // Enable the Run Test button
+                runTestButton.disabled = false;
+
+                // Hide the sign-in button
+                signInButton.style.display = "none";
+
+                // Log out automatically after 1 hour
+                setTimeout(() => {
+                    // Clear token
+                    token = null;
+
+                    // Disable the Run Test button
+                    runTestButton.disabled = true;
+
+                    // Show the sign-in button
+                    signInButton.style.display = "block";
+                }, 3600000);
+            };
+
+            window.addEventListener("load", async () => {
+                const experimentSettingsForm = document.getElementById("experiment-settings-form");
+                const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
+                const assignmentUnitSelect = document.getElementById("unit-of-assignment");
+                const consistencyRuleSelect = document.getElementById("consistency-rule");
+                const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
+                const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
+                const statusUpdateDelay = document.getElementById("status-update-delay");
+                const runTestButton = document.getElementById("runtest-button");
+                const conditionsTable = document.getElementById("conditions-table");
+                const studentCells = conditionsTable.getElementsByClassName("student-cell");
+                const conditionCells = conditionsTable.getElementsByClassName("condition-cell");
+                const responseTimeTable = document.getElementById("response-time-table");
+                const responseTimeCells = responseTimeTable.getElementsByClassName("response-time-cell");
+                const tableOverlay = document.getElementById("table-overlay");
+                const loadingSpinner = document.getElementById("loading-spinner");
+
+                assignmentUnitSelect.addEventListener("change", () => {
+                    if (assignmentUnitSelect.value === "Individual") {
+                        consistencyRuleSelect.innerHTML = `
+                            <option value="Individual">Individual</option>`;
+                    } else if (assignmentUnitSelect.value === "Group") {
+                        consistencyRuleSelect.innerHTML = `
+                            <option value="Individual">Individual</option>
+                            <option value="Group">Group</option>`;
                     }
-                    // Enable loading
-                    setLoadingState(true);
+                    for (let i = 0; i < studentCells.length; i++) {
+                        studentCells[i].innerText = `Student ${i + 1} (${assignmentUnitSelect.value === "Individual" ? "Individual" : `Group ${i < 3 ? "A" : "B"}`})`;
+                    }
+                });
 
-                    // Scroll to the bottom of the page
-                    if (document.body.scrollHeight > window.innerHeight) {
+                // Called on run test button click
+                let isLoading = false;
+                experimentSettingsForm.addEventListener("submit", async (event) => {
+                    const setLoadingState = (state) => {
+                        isLoading = state;
+                        runTestButton.style.pointerEvents = state ? "none" : "auto";
+                        runTestButton.style.opacity = state ? 0.7 : 1;
+                        tableOverlay.style.opacity = state ? 1 : 0;
+                        loadingSpinner.style.opacity = state ? 1 : 0;
+                    }
+                    try {
+                        event.preventDefault();
+                        if (isLoading) {
+                            return;
+                        }
+                        // Enable loading
+                        setLoadingState(true);
+
+                        // Scroll to the bottom of the page
+                        if (document.body.scrollHeight > window.innerHeight) {
+                            window.scrollTo({
+                                top: document.body.scrollHeight / 2,
+                                behavior: "smooth"
+                            });
+                        }
+                        // Experiment settings
+                        const experimentSettings = {
+                            hostUrl: upgradeHostUrlSelect.value,
+                            context: "add",
+                            assignmentUnit: assignmentUnitSelect.value.toLowerCase(),
+                            consistencyRule: consistencyRuleSelect.value.toLowerCase(),
+                            postExperimentRule: postExperimentRuleSelect.value.toLowerCase() === "continue" ? "continue" : "assign",
+                            postExperimentConditionCode: postExperimentRuleSelect.value.toLowerCase() === "continue" ? null : postExperimentRuleSelect.value,
+                            excludeIfReached: excludeIfReachedSelect.value.toLowerCase() === "true" ? true : false,
+                            statusUpdateDelayMillis: Number(statusUpdateDelay.value) * 1000,
+                            conditionCodes: ["Condition A", "Condition B", "Condition C"],
+                            queryKeys: [],
+                            conditionCells: conditionCells,
+                            conditionCellColorMap: {
+                                "Default": "rgb(235, 255, 235)",
+                                "Condition A": "rgb(255, 225, 225)",
+                                "Condition B": "rgb(255, 255, 225)",
+                                "Condition C": "rgb(245, 235, 255)"
+                            },
+                            responseTimeCells: responseTimeCells,
+                            responseTimeCellColorMap: {
+                                "Fast": "rgb(235, 255, 235)",
+                                "Moderate": "rgb(255, 255, 225)",
+                                "Slow": "rgb(255, 225, 225)"
+                            },
+                            minModerateTime: 250,
+                            minSlowTime: 500
+                        };
+                        // Create a tester class
+                        const tester = new UpGradeTester(experimentSettings);
+
+                        // Create experiment
+                        await tester.createExperiment();
+
+                        // Perform test
+                        await tester.performTest();
+
+                        // Delete the experiment
+                        await tester.deleteExperiment();
+
+                        // Disable loading
+                        setLoadingState(false);
+                    } catch (error) {
+                        // Disable loading
+                        setLoadingState(false);
+
+                        // Scroll to the top of the page
                         window.scrollTo({
-                            top: document.body.scrollHeight / 2,
+                            top: 0,
                             behavior: "smooth"
                         });
-                    }
-                    // Experiment settings
-                    const experimentSettings = {
-                        hostUrl: upgradeHostUrlSelect.value,
-                        context: "add",
-                        assignmentUnit: assignmentUnitSelect.value.toLowerCase(),
-                        consistencyRule: consistencyRuleSelect.value.toLowerCase(),
-                        postExperimentRule: postExperimentRuleSelect.value.toLowerCase() === "continue" ? "continue" : "assign",
-                        postExperimentConditionCode: postExperimentRuleSelect.value.toLowerCase() === "continue" ? null : postExperimentRuleSelect.value,
-                        excludeIfReached: excludeIfReachedSelect.value.toLowerCase() === "true" ? true : false,
-                        statusUpdateDelayMillis: Number(statusUpdateDelay.value) * 1000,
-                        conditionCodes: ["Condition A", "Condition B", "Condition C"],
-                        queryKeys: [],
-                        conditionCells: conditionCells,
-                        conditionCellColorMap: {
-                            "Default": "rgb(235, 255, 235)",
-                            "Condition A": "rgb(255, 225, 225)",
-                            "Condition B": "rgb(255, 255, 225)",
-                            "Condition C": "rgb(245, 235, 255)"
-                        },
-                        responseTimeCells: responseTimeCells,
-                        responseTimeCellColorMap: {
-                            "Fast": "rgb(235, 255, 235)",
-                            "Moderate": "rgb(255, 255, 225)",
-                            "Slow": "rgb(255, 225, 225)"
-                        },
-                        minModerateTime: 250,
-                        minSlowTime: 500
-                    };
-                    // Create a tester class
-                    const tester = new UpGradeTester(experimentSettings);
 
-                    // Create experiment
-                    await tester.createExperiment();
-
-                    // Perform test
-                    await tester.performTest();
-
-                    // Delete the experiment
-                    await tester.deleteExperiment();
-
-                    // Disable loading
-                    setLoadingState(false);
-                } catch (error) {
-                    // Disable loading
-                    setLoadingState(false);
-
-                    // Scroll to the top of the page
-                    window.scrollTo({
-                        top: 0,
-                        behavior: "smooth"
-                    });
-
-                    // Print and alert errors
-                    console.error(`${error.name}: ${error.message}`);
-                    if (error.message === "Failed to fetch") {
-                        alert(`Failed to access the UpGrade host URL: ${upgradeHostUrlSelect.value}.\nPlease make sure UpGrade is running on ${upgradeHostUrlSelect.value}.`);
-                        return;
-                    }
-                    alert(`${error.name}: ${error.message}`);
-                }
-            });
-        });
-
-        class UpGradeTester {
-            constructor(experimentSettings) {
-                this.hostUrl = experimentSettings.hostUrl;
-                this.context = experimentSettings.context;
-                this.assignmentUnit = experimentSettings.assignmentUnit;
-                this.consistencyRule = experimentSettings.consistencyRule;
-                this.postExperimentRule = experimentSettings.postExperimentRule;
-                this.postExperimentConditionCode = experimentSettings.postExperimentConditionCode;
-                this.excludeIfReached = experimentSettings.excludeIfReached;
-                this.statusUpdateDelayMillis = experimentSettings.statusUpdateDelayMillis;
-                this.conditionCodes = experimentSettings.conditionCodes;
-                this.queryKeys = experimentSettings.queryKeys;
-                this.conditionCells = experimentSettings.conditionCells;
-                this.conditionCellColorMap = experimentSettings.conditionCellColorMap;
-                this.responseTimeCells = experimentSettings.responseTimeCells;
-                this.responseTimeCellColorMap = experimentSettings.responseTimeCellColorMap;
-                this.minModerateTime = experimentSettings.minModerateTime;
-                this.minSlowTime = experimentSettings.minSlowTime;
-                this.conditionCellMap = {};
-                for (let i = 0; i < this.conditionCells.length; i += 3) {
-                    this.conditionCellMap[`student${Math.floor(i / 3) + 1}`] = {
-                        inactive: this.conditionCells[i],
-                        enrolling: this.conditionCells[i + 1],
-                        enrollmentComplete: this.conditionCells[i + 2]
-                    };
-                }
-                this.responseTimeCellMap = {
-                    init: {},
-                    assign: {},
-                    mark: {}
-                };
-                Object.values(this.responseTimeCellMap).forEach((value, index) => {
-                    value.cell = this.responseTimeCells[index];
-                    value.responseTimes = [];
-                });
-                this.date = "";
-                this.experimentId = "";
-                this.experimentStatus = "";
-                this.fetchWrapper = new FetchWrapper();
-                this.idGenerator = new IdGenerator();
-            }
-
-            async clearUpgradeData() {
-                await this.fetchWrapper.delete(`${this.hostUrl}/api/clearDB`);
-            }
-
-            async deleteExperiment() {
-                await this.fetchWrapper.delete(`${this.hostUrl}/api/experiments/${this.experimentId}`);
-            }
-
-            async deleteAllExperiments() {
-                const experiments = await this.fetchWrapper.get(`${this.hostUrl}/api/experiments`);
-                for (const experiment of experiments) {
-                    await this.deleteExperiment(experiment.id);
-                }
-            }
-
-            async saveMetrics() {
-                await this.fetchWrapper.post(`${this.hostUrl}/api/metric/save`, {
-                    metricUnit: [{
-                            metric: "durationSeconds",
-                            datatype: "continuous"
-                        },
-                        {
-                            metric: "percentCorrect",
-                            datatype: "continuous"
+                        // Print and alert errors
+                        console.error(`${error.name}: ${error.message}`);
+                        if (error.message === "Failed to fetch") {
+                            alert(`Failed to access the UpGrade host URL: ${upgradeHostUrlSelect.value}.\nPlease make sure UpGrade is running on ${upgradeHostUrlSelect.value}.`);
+                            return;
                         }
-                    ]
-                });
-            }
-
-            async createExperiment() {
-                this.date = new Date().toISOString();
-                this.idGenerator.reset();
-                this.experimentId = this.idGenerator.uuidv4();
-                this.experimentStatus = "inactive";
-                const conditionIdMap = {};
-                for (const conditionCode of this.conditionCodes) {
-                    conditionIdMap[conditionCode] = this.idGenerator.uuidv4();
-                }
-                const segmentNamePrefix = this.idGenerator.uuidv4();
-                await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, {
-                    createdAt: this.date,
-                    updatedAt: this.date,
-                    versionNumber: 1,
-                    id: this.experimentId,
-                    name: `Experiment_${this.experimentId}`,
-                    description: "",
-                    context: [this.context],
-                    state: "inactive",
-                    startOn: null,
-                    assignmentUnit: this.assignmentUnit,
-                    consistencyRule: this.consistencyRule,
-                    postExperimentRule: this.postExperimentRule,
-                    type: "Simple",
-                    enrollmentCompleteCondition: null,
-                    endOn: null,
-                    revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode] : null : null,
-                    tags: [],
-                    group: this.assignmentUnit === "group" ? "add-group1" : null,
-                    logging: false,
-                    filterMode: "includeAll",
-                    backendVersion: "1.0.0",
-                    partitions: this.makePartitions(),
-                    conditions: this.makeConditions(conditionIdMap),
-                    conditionAliases: [],
-                    stateTimeLogs: [],
-                    queries: this.makeQueries(),
-                    experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
-                    experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion")
-                });
-            }
-
-            async performTest() {
-                // Empty the condition cells
-                for (const conditionCell of this.conditionCells) {
-                    conditionCell.innerText = "";
-                    conditionCell.style.background = "#FFFFFF";
-                }
-                // Empty the response time cells
-                Object.values(this.responseTimeCellMap).forEach((value) => {
-                    value.cell.innerText = "";
-                    value.cell.style.background = "#FFFFFF";
-                    value.responseTimes = [];
-                });
-                // Create students
-                const makeStudent = (studentName) => {
-                    return {
-                        name: studentName,
-                        id: this.idGenerator.uuidv4()
-                    };
-                }
-                const student1 = makeStudent("student1");
-                const student2 = makeStudent("student2");
-                const student3 = makeStudent("student3");
-                const student4 = makeStudent("student4");
-                const student5 = makeStudent("student5");
-                if (this.assignmentUnit === "individual") {
-                    // Student 1 (Individual) visits the decision point the first time (Inactive)
-                    await this.visitDecisionPoint(student1.name, student1.id, null);
-
-                    // Update experiment status to enrolling
-                    await this.updateExperimentStatus("enrolling");
-
-                    // Student 1 (Individual) visits the decision point the second time (Enrolling)
-                    await this.visitDecisionPoint(student1.name, student1.id, null);
-
-                    // Student 2 (Individual) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student2.name, student2.id, null);
-
-                    // Student 3 (Individual) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student3.name, student3.id, null);
-
-                    // Student 4 (Individual) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student4.name, student4.id, null);
-
-                    // Update experiment status to enrollment complete
-                    await this.updateExperimentStatus("enrollmentComplete");
-
-                    // Student 1 (Individual) visits the decision point the third time (Enrollment Complete)
-                    await this.visitDecisionPoint(student1.name, student1.id, null);
-
-                    // Student 2 (Individual) visits the decision point the second time (Enrollment Complete)
-                    await this.visitDecisionPoint(student2.name, student2.id, null);
-
-                    // Student 3 (Individual) visits the decision point the second time (Enrollment Complete)
-                    await this.visitDecisionPoint(student3.name, student3.id, null);
-
-                    // Student 4 (Individual) visits the decision point the second time (Enrollment Complete)
-                    await this.visitDecisionPoint(student4.name, student4.id, null);
-
-                    // Student 5 (Individual) visits the decision point the first time (Enrollment Complete)
-                    await this.visitDecisionPoint(student5.name, student5.id, null);
-                } else if (this.assignmentUnit === "group") {
-                    // Student 1 (Group A) visits the decision point the first time (Inactive)
-                    await this.visitDecisionPoint(student1.name, student1.id, "Group A");
-
-                    // Update experiment status to enrolling
-                    await this.updateExperimentStatus("enrolling");
-
-                    // Student 1 (Group A) visits the decision point the second time (Enrolling)
-                    await this.visitDecisionPoint(student1.name, student1.id, "Group A");
-
-                    // Student 2 (Group A) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student2.name, student2.id, "Group A");
-
-                    // Student 4 (Group B) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student4.name, student4.id, "Group B");
-
-                    // Update experiment status to enrollment complete
-                    await this.updateExperimentStatus("enrollmentComplete");
-
-                    // Student 1 (Group A) visits the decision point the third time (Enrollment Complete)
-                    await this.visitDecisionPoint(student1.name, student1.id, "Group A");
-
-                    // Student 2 (Group A) visits the decision point the second time (Enrollment Complete)
-                    await this.visitDecisionPoint(student2.name, student2.id, "Group A");
-
-                    // Student 3 (Group A) visits the decision point the first time (Enrollment Complete)
-                    await this.visitDecisionPoint(student3.name, student3.id, "Group A");
-
-                    // Student 4 (Group B) visits the decision point the second time (Enrolling)
-                    await this.visitDecisionPoint(student4.name, student4.id, "Group B");
-
-                    // Student 5 (Group B) visits the decision point the first time (Enrolling)
-                    await this.visitDecisionPoint(student5.name, student5.id, "Group B");
-                } else {
-                    throw "Invalid assignmentUnit"
-                }
-            }
-
-            async updateExperimentStatus(experimentStatus) {
-                if (experimentStatus === this.experimentStatus) {
-                    return;
-                }
-                await this.fetchWrapper.post(`${this.hostUrl}/api/experiments/state`, {
-                    experimentId: this.experimentId,
-                    state: experimentStatus
-                });
-                this.experimentStatus = experimentStatus;
-
-                // Delay for a specified number of milliseconds
-                await new Promise(resolve => setTimeout(resolve, this.statusUpdateDelayMillis));
-            }
-
-            async visitDecisionPoint(studentName, studentId, group) {
-                // Note: Later, this should be done in https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/upgrade-client-lib.min.js
-                const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
-
-                // Note: Wouldn't it make more sense to require the studentId in init() so the upClient can be reused/reinited?
-                const upClient = new UpgradeClient(studentId, this.hostUrl);
-                const initStartTime = Date.now();
-                await upClient.init();
-                this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
-                if (group) {
-                    // Note: init(), setGroupMembership(), and setWorkingGroup() should accept object type instead of map (https://github.com/CarnegieLearningWeb/UpGrade/issues/148)
-                    const groupMembership = new Map();
-                    groupMembership.set("add-group1", ["Group A", "Group B"]);
-                    const workingGroup = new Map();
-                    workingGroup.set("add-group1", group);
-                    await upClient.setGroupMembership(groupMembership);
-                    await upClient.setWorkingGroup(workingGroup);
-                    // Note: init(groupMembership, workingGroup) doesn't seem to work
-                }
-                const experimentSite = `Site_${this.experimentId}`;
-                const experimentTarget = `Target_${this.experimentId}`;
-                const assignStartTime = Date.now();
-                const experimentCondition = await upClient.getExperimentCondition(this.context, experimentSite, experimentTarget); // Note: it might be better if it returns assignedCondition instead of the object that contains it
-                this.responseTimeCellMap.assign.responseTimes.push(Date.now() - assignStartTime);
-                let conditionCode = null;
-                if (experimentCondition) { // Note: It would be cleaner to write code if getExperimentCondition() always returns an object instead of null 
-                    conditionCode = experimentCondition.assignedCondition.conditionCode;
-                }
-                // Note: If markExperimentPoint() is always required after calling getExperimentCondition(), do we really need to separate the two?
-                // In what use cases do we call getExperimentCondition() and not call markExperimentPoint()?
-                const markStartTime = Date.now();
-                await upClient.markExperimentPoint(experimentSite, conditionCode, experimentTarget);
-                this.responseTimeCellMap.mark.responseTimes.push(Date.now() - markStartTime);
-
-                // Update the condition cells
-                if (this.conditionCellMap.hasOwnProperty(studentName)) {
-                    const conditionCell = this.conditionCellMap[studentName][this.experimentStatus];
-                    conditionCell.innerText = conditionCode === null ? "Default" : conditionCode;
-                    conditionCell.style.background = this.conditionCellColorMap[conditionCell.innerText];
-                }
-                // Update the response time cells
-                Object.values(this.responseTimeCellMap).forEach((value) => {
-                    const mean = Math.round(value.responseTimes.reduce((a, b) => a + b) / value.responseTimes.length);
-                    const max = Math.round(value.responseTimes.reduce((a, b) => Math.max(a, b)));
-                    value.cell.innerHTML = `Mean: ${mean}<br>Max: ${max}`;
-                    if (max < this.minModerateTime) {
-                        value.cell.style.background = this.responseTimeCellColorMap["Fast"];
-                    } else if (max < this.minSlowTime) {
-                        value.cell.style.background = this.responseTimeCellColorMap["Moderate"];
-                    } else {
-                        value.cell.style.background = this.responseTimeCellColorMap["Slow"];
+                        alert(`${error.name}: ${error.message}`);
                     }
                 });
-            }
+            });
 
-            // Make data functions (Used by createExperiment())
-            makePartitions() {
-                const partitions = [];
-                const partition = {
-                    createdAt: this.date,
-                    updatedAt: this.date,
-                    versionNumber: 1,
-                    id: this.idGenerator.uuidv4(),
-                    twoCharacterId: this.idGenerator.twoCharacterId(),
-                    site: `Site_${this.experimentId}`,
-                    target: `Target_${this.experimentId}`,
-                    description: "",
-                    excludeIfReached: this.excludeIfReached,
-                    order: 1
-                };
-                partitions.push(partition);
-                return partitions;
-            }
+            class UpGradeTester {
+                constructor(experimentSettings) {
+                    this.hostUrl = experimentSettings.hostUrl;
+                    this.context = experimentSettings.context;
+                    this.assignmentUnit = experimentSettings.assignmentUnit;
+                    this.consistencyRule = experimentSettings.consistencyRule;
+                    this.postExperimentRule = experimentSettings.postExperimentRule;
+                    this.postExperimentConditionCode = experimentSettings.postExperimentConditionCode;
+                    this.excludeIfReached = experimentSettings.excludeIfReached;
+                    this.statusUpdateDelayMillis = experimentSettings.statusUpdateDelayMillis;
+                    this.conditionCodes = experimentSettings.conditionCodes;
+                    this.queryKeys = experimentSettings.queryKeys;
+                    this.conditionCells = experimentSettings.conditionCells;
+                    this.conditionCellColorMap = experimentSettings.conditionCellColorMap;
+                    this.responseTimeCells = experimentSettings.responseTimeCells;
+                    this.responseTimeCellColorMap = experimentSettings.responseTimeCellColorMap;
+                    this.minModerateTime = experimentSettings.minModerateTime;
+                    this.minSlowTime = experimentSettings.minSlowTime;
+                    this.conditionCellMap = {};
+                    for (let i = 0; i < this.conditionCells.length; i += 3) {
+                        this.conditionCellMap[`student${Math.floor(i / 3) + 1}`] = {
+                            inactive: this.conditionCells[i],
+                            enrolling: this.conditionCells[i + 1],
+                            enrollmentComplete: this.conditionCells[i + 2]
+                        };
+                    }
+                    this.responseTimeCellMap = {
+                        init: {},
+                        assign: {},
+                        mark: {}
+                    };
+                    Object.values(this.responseTimeCellMap).forEach((value, index) => {
+                        value.cell = this.responseTimeCells[index];
+                        value.responseTimes = [];
+                    });
+                    this.date = "";
+                    this.experimentId = "";
+                    this.experimentStatus = "";
+                    this.fetchWrapper = new FetchWrapper();
+                    this.idGenerator = new IdGenerator();
+                }
 
-            makeConditions(conditionIdMap) {
-                const conditions = [];
-                for (const conditionCode of this.conditionCodes) {
-                    const condition = {
+                async deleteExperiment() {
+                    await this.fetchWrapper.delete(`${this.hostUrl}/api/experiments/${this.experimentId}`);
+                }
+
+                async deleteAllExperiments() {
+                    const experiments = await this.fetchWrapper.get(`${this.hostUrl}/api/experiments`);
+                    for (const experiment of experiments) {
+                        await this.deleteExperiment(experiment.id);
+                    }
+                }
+
+                async saveMetrics() {
+                    await this.fetchWrapper.post(`${this.hostUrl}/api/metric/save`, {
+                        metricUnit: [{
+                                metric: "durationSeconds",
+                                datatype: "continuous"
+                            },
+                            {
+                                metric: "percentCorrect",
+                                datatype: "continuous"
+                            }
+                        ]
+                    });
+                }
+
+                async createExperiment() {
+                    this.date = new Date().toISOString();
+                    this.idGenerator.reset();
+                    this.experimentId = this.idGenerator.uuidv4();
+                    this.experimentStatus = "inactive";
+                    const conditionIdMap = {};
+                    for (const conditionCode of this.conditionCodes) {
+                        conditionIdMap[conditionCode] = this.idGenerator.uuidv4();
+                    }
+                    const segmentNamePrefix = this.idGenerator.uuidv4();
+                    await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, {
                         createdAt: this.date,
                         updatedAt: this.date,
                         versionNumber: 1,
-                        id: conditionIdMap[conditionCode],
-                        twoCharacterId: this.idGenerator.twoCharacterId(),
-                        name: "",
-                        description: null,
-                        conditionCode: conditionCode,
-                        assignmentWeight: 100 / this.conditionCodes.length,
-                        order: 1
-                    }
-                    conditions.push(condition);
+                        id: this.experimentId,
+                        name: `Experiment_${this.experimentId}`,
+                        description: "",
+                        context: [this.context],
+                        state: "inactive",
+                        startOn: null,
+                        assignmentUnit: this.assignmentUnit,
+                        consistencyRule: this.consistencyRule,
+                        postExperimentRule: this.postExperimentRule,
+                        type: "Simple",
+                        enrollmentCompleteCondition: null,
+                        endOn: null,
+                        revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode] : null : null,
+                        tags: [],
+                        group: this.assignmentUnit === "group" ? "add-group1" : null,
+                        logging: false,
+                        filterMode: "includeAll",
+                        backendVersion: "1.0.0",
+                        partitions: this.makePartitions(),
+                        conditions: this.makeConditions(conditionIdMap),
+                        conditionAliases: [],
+                        stateTimeLogs: [],
+                        queries: this.makeQueries(),
+                        experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
+                        experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion")
+                    });
                 }
-                return conditions;
-            }
 
-            makeQueries() {
-                const queries = [];
-                for (const queryKey of this.queryKeys) {
-                    const query = {
+                async performTest() {
+                    // Empty the condition cells
+                    for (const conditionCell of this.conditionCells) {
+                        conditionCell.innerText = "";
+                        conditionCell.style.background = "#FFFFFF";
+                    }
+                    // Empty the response time cells
+                    Object.values(this.responseTimeCellMap).forEach((value) => {
+                        value.cell.innerText = "";
+                        value.cell.style.background = "#FFFFFF";
+                        value.responseTimes = [];
+                    });
+                    // Create students
+                    const makeStudent = (studentName) => {
+                        return {
+                            name: studentName,
+                            id: this.idGenerator.uuidv4()
+                        };
+                    }
+                    const student1 = makeStudent("student1");
+                    const student2 = makeStudent("student2");
+                    const student3 = makeStudent("student3");
+                    const student4 = makeStudent("student4");
+                    const student5 = makeStudent("student5");
+                    if (this.assignmentUnit === "individual") {
+                        // Student 1 (Individual) visits the decision point the first time (Inactive)
+                        await this.visitDecisionPoint(student1.name, student1.id, null);
+
+                        // Update experiment status to enrolling
+                        await this.updateExperimentStatus("enrolling");
+
+                        // Student 1 (Individual) visits the decision point the second time (Enrolling)
+                        await this.visitDecisionPoint(student1.name, student1.id, null);
+
+                        // Student 2 (Individual) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student2.name, student2.id, null);
+
+                        // Student 3 (Individual) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student3.name, student3.id, null);
+
+                        // Student 4 (Individual) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student4.name, student4.id, null);
+
+                        // Update experiment status to enrollment complete
+                        await this.updateExperimentStatus("enrollmentComplete");
+
+                        // Student 1 (Individual) visits the decision point the third time (Enrollment Complete)
+                        await this.visitDecisionPoint(student1.name, student1.id, null);
+
+                        // Student 2 (Individual) visits the decision point the second time (Enrollment Complete)
+                        await this.visitDecisionPoint(student2.name, student2.id, null);
+
+                        // Student 3 (Individual) visits the decision point the second time (Enrollment Complete)
+                        await this.visitDecisionPoint(student3.name, student3.id, null);
+
+                        // Student 4 (Individual) visits the decision point the second time (Enrollment Complete)
+                        await this.visitDecisionPoint(student4.name, student4.id, null);
+
+                        // Student 5 (Individual) visits the decision point the first time (Enrollment Complete)
+                        await this.visitDecisionPoint(student5.name, student5.id, null);
+                    } else if (this.assignmentUnit === "group") {
+                        // Student 1 (Group A) visits the decision point the first time (Inactive)
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
+
+                        // Update experiment status to enrolling
+                        await this.updateExperimentStatus("enrolling");
+
+                        // Student 1 (Group A) visits the decision point the second time (Enrolling)
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
+
+                        // Student 2 (Group A) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student2.name, student2.id, "Group A");
+
+                        // Student 4 (Group B) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student4.name, student4.id, "Group B");
+
+                        // Update experiment status to enrollment complete
+                        await this.updateExperimentStatus("enrollmentComplete");
+
+                        // Student 1 (Group A) visits the decision point the third time (Enrollment Complete)
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
+
+                        // Student 2 (Group A) visits the decision point the second time (Enrollment Complete)
+                        await this.visitDecisionPoint(student2.name, student2.id, "Group A");
+
+                        // Student 3 (Group A) visits the decision point the first time (Enrollment Complete)
+                        await this.visitDecisionPoint(student3.name, student3.id, "Group A");
+
+                        // Student 4 (Group B) visits the decision point the second time (Enrolling)
+                        await this.visitDecisionPoint(student4.name, student4.id, "Group B");
+
+                        // Student 5 (Group B) visits the decision point the first time (Enrolling)
+                        await this.visitDecisionPoint(student5.name, student5.id, "Group B");
+                    } else {
+                        throw "Invalid assignmentUnit"
+                    }
+                }
+
+                async updateExperimentStatus(experimentStatus) {
+                    if (experimentStatus === this.experimentStatus) {
+                        return;
+                    }
+                    await this.fetchWrapper.post(`${this.hostUrl}/api/experiments/state`, {
+                        experimentId: this.experimentId,
+                        state: experimentStatus
+                    });
+                    this.experimentStatus = experimentStatus;
+
+                    // Delay for a specified number of milliseconds
+                    await new Promise(resolve => setTimeout(resolve, this.statusUpdateDelayMillis));
+                }
+
+                async visitDecisionPoint(studentName, studentId, group) {
+                    // Note: Later, this should be done in https://cdn.jsdelivr.net/npm/upgrade_client_lib@1.1.7/dist/upgrade-client-lib.min.js
+                    const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
+                    const upClient = new UpgradeClient(studentId, this.hostUrl);
+                    const initStartTime = Date.now();
+                    await upClient.init();
+                    this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
+                    if (group) {
+                        const groupMembership = new Map();
+                        groupMembership.set("add-group1", ["Group A", "Group B"]);
+                        const workingGroup = new Map();
+                        workingGroup.set("add-group1", group);
+                        await upClient.setGroupMembership(groupMembership);
+                        await upClient.setWorkingGroup(workingGroup);
+                        // Note: init(groupMembership, workingGroup) doesn't seem to work
+                    }
+                    const experimentSite = `Site_${this.experimentId}`;
+                    const experimentTarget = `Target_${this.experimentId}`;
+                    const assignStartTime = Date.now();
+                    const experimentCondition = await upClient.getExperimentCondition(this.context, experimentSite, experimentTarget);
+                    this.responseTimeCellMap.assign.responseTimes.push(Date.now() - assignStartTime);
+                    let conditionCode = null;
+                    if (experimentCondition) {
+                        conditionCode = experimentCondition.assignedCondition.conditionCode;
+                    }
+                    const markStartTime = Date.now();
+                    await upClient.markExperimentPoint(experimentSite, conditionCode, experimentTarget);
+                    this.responseTimeCellMap.mark.responseTimes.push(Date.now() - markStartTime);
+
+                    // Update the condition cells
+                    if (this.conditionCellMap.hasOwnProperty(studentName)) {
+                        const conditionCell = this.conditionCellMap[studentName][this.experimentStatus];
+                        conditionCell.innerText = conditionCode === null ? "Default" : conditionCode;
+                        conditionCell.style.background = this.conditionCellColorMap[conditionCell.innerText];
+                    }
+                    // Update the response time cells
+                    Object.values(this.responseTimeCellMap).forEach((value) => {
+                        const mean = Math.round(value.responseTimes.reduce((a, b) => a + b) / value.responseTimes.length);
+                        const max = Math.round(value.responseTimes.reduce((a, b) => Math.max(a, b)));
+                        value.cell.innerHTML = `Mean: ${mean}<br>Max: ${max}`;
+                        if (max < this.minModerateTime) {
+                            value.cell.style.background = this.responseTimeCellColorMap["Fast"];
+                        } else if (max < this.minSlowTime) {
+                            value.cell.style.background = this.responseTimeCellColorMap["Moderate"];
+                        } else {
+                            value.cell.style.background = this.responseTimeCellColorMap["Slow"];
+                        }
+                    });
+                }
+
+                // Make data functions (Used by createExperiment())
+                makePartitions() {
+                    const partitions = [];
+                    const partition = {
                         createdAt: this.date,
                         updatedAt: this.date,
                         versionNumber: 1,
                         id: this.idGenerator.uuidv4(),
-                        name: `${queryKey} (Mean)`,
-                        query: {
-                            operationType: "avg"
-                        },
-                        repeatedMeasure: "MOST RECENT",
-                        metric: {
+                        twoCharacterId: this.idGenerator.twoCharacterId(),
+                        site: `Site_${this.experimentId}`,
+                        target: `Target_${this.experimentId}`,
+                        description: "",
+                        excludeIfReached: this.excludeIfReached,
+                        order: 1
+                    };
+                    partitions.push(partition);
+                    return partitions;
+                }
+
+                makeConditions(conditionIdMap) {
+                    const conditions = [];
+                    for (const conditionCode of this.conditionCodes) {
+                        const condition = {
                             createdAt: this.date,
                             updatedAt: this.date,
                             versionNumber: 1,
-                            key: queryKey,
-                            type: "continuous",
-                            allowedData: null
+                            id: conditionIdMap[conditionCode],
+                            twoCharacterId: this.idGenerator.twoCharacterId(),
+                            name: "",
+                            description: null,
+                            conditionCode: conditionCode,
+                            assignmentWeight: 100 / this.conditionCodes.length,
+                            order: 1
                         }
+                        conditions.push(condition);
                     }
-                    queries.push(query);
+                    return conditions;
                 }
-                return queries;
-            }
 
-            makeExperimentSegment(segmentNamePrefix, type) {
-                const name = `${segmentNamePrefix} ${type} Segment`;
-                return {
-                    createdAt: this.date,
-                    updatedAt: this.date,
-                    versionNumber: 1,
-                    segment: {
+                makeQueries() {
+                    const queries = [];
+                    for (const queryKey of this.queryKeys) {
+                        const query = {
+                            createdAt: this.date,
+                            updatedAt: this.date,
+                            versionNumber: 1,
+                            id: this.idGenerator.uuidv4(),
+                            name: `${queryKey} (Mean)`,
+                            query: {
+                                operationType: "avg"
+                            },
+                            repeatedMeasure: "MOST RECENT",
+                            metric: {
+                                createdAt: this.date,
+                                updatedAt: this.date,
+                                versionNumber: 1,
+                                key: queryKey,
+                                type: "continuous",
+                                allowedData: null
+                            }
+                        }
+                        queries.push(query);
+                    }
+                    return queries;
+                }
+
+                makeExperimentSegment(segmentNamePrefix, type) {
+                    const name = `${segmentNamePrefix} ${type} Segment`;
+                    return {
                         createdAt: this.date,
                         updatedAt: this.date,
                         versionNumber: 1,
-                        id: this.idGenerator.uuidv4(),
-                        name: name,
-                        description: name,
-                        context: this.context,
-                        type: "private",
-                        individualForSegment: [],
-                        groupForSegment: [],
-                        subSegments: []
+                        segment: {
+                            createdAt: this.date,
+                            updatedAt: this.date,
+                            versionNumber: 1,
+                            id: this.idGenerator.uuidv4(),
+                            name: name,
+                            description: name,
+                            context: this.context,
+                            type: "private",
+                            individualForSegment: [],
+                            groupForSegment: [],
+                            subSegments: []
+                        }
                     }
                 }
             }
-        }
 
-        class FetchWrapper {
-            constructor() {
-                this.headers = {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                };
-            }
-
-            async getData(response) {
-                const data = await response.json();
-                if (data.error) {
-                    throw data.error;
+            class FetchWrapper {
+                get headers() {
+                    return {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        ...(token && { "Authorization": `Bearer ${token}` })
+                    };
                 }
-                return data;
-            }
 
-            async fetchGetDelete(url, method) {
-                const response = await fetch(url, {
-                    method,
-                    headers: this.headers
-                });
-                return await this.getData(response);
-            }
-
-            async fetchPostPut(url, method, data = {}) {
-                const response = await fetch(url, {
-                    method,
-                    headers: this.headers,
-                    body: JSON.stringify(data)
-                });
-                return await this.getData(response);
-            }
-
-            async get(url) {
-                return await this.fetchGetDelete(url, "GET");
-            }
-
-            async post(url, data) {
-                return await this.fetchPostPut(url, "POST", data);
-            }
-
-            async put(url, data) {
-                return await this.fetchPostPut(url, "PUT", data);
-            }
-
-            async delete(url) {
-                return await this.fetchGetDelete(url, "DELETE");
-            }
-        }
-
-        class IdGenerator {
-            constructor() {
-                this.twoCharacterIdSet = new Set();
-                this.numCombinations = 36 * 36;
-            }
-
-            reset() {
-                this.twoCharacterIdSet.clear();
-            }
-
-            twoCharacterId() { // Note: UpGrade's twoCharacterId() function should be updated like this to prevent freezing
-                while (this.twoCharacterIdSet.size < this.numCombinations) {
-                    const id = Math.random().toString(36).substring(2, 4).toUpperCase();
-                    if (!this.twoCharacterIdSet.has(id)) {
-                        this.twoCharacterIdSet.add(id);
-                        return id;
+                async getData(response) {
+                    const data = await response.json();
+                    if (data.error) {
+                        throw data.error;
                     }
+                    return data;
                 }
-                throw "twoCharacterId exceeded the limit";
+
+                async fetchGetDelete(url, method) {
+                    const response = await fetch(url, {
+                        method,
+                        headers: this.headers
+                    });
+                    return await this.getData(response);
+                }
+
+                async fetchPostPut(url, method, data = {}) {
+                    const response = await fetch(url, {
+                        method,
+                        headers: this.headers,
+                        body: JSON.stringify(data)
+                    });
+                    return await this.getData(response);
+                }
+
+                async get(url) {
+                    return await this.fetchGetDelete(url, "GET");
+                }
+
+                async post(url, data) {
+                    return await this.fetchPostPut(url, "POST", data);
+                }
+
+                async put(url, data) {
+                    return await this.fetchPostPut(url, "PUT", data);
+                }
+
+                async delete(url) {
+                    return await this.fetchGetDelete(url, "DELETE");
+                }
             }
 
-            uuidv4() {
-                return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-                );
+            class IdGenerator {
+                constructor() {
+                    this.twoCharacterIdSet = new Set();
+                    this.numCombinations = 36 * 36;
+                }
+
+                reset() {
+                    this.twoCharacterIdSet.clear();
+                }
+
+                twoCharacterId() { // Note: UpGrade's twoCharacterId() function should be updated like this to prevent freezing
+                    while (this.twoCharacterIdSet.size < this.numCombinations) {
+                        const id = Math.random().toString(36).substring(2, 4).toUpperCase();
+                        if (!this.twoCharacterIdSet.has(id)) {
+                            this.twoCharacterIdSet.add(id);
+                            return id;
+                        }
+                    }
+                    throw "twoCharacterId exceeded the limit";
+                }
+
+                uuidv4() {
+                    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                    );
+                }
             }
-        }
+        })();
     </script>
 </body>
 

@@ -10,6 +10,6 @@ A simple app to test the functionality of [UpGrade](https://github.com/CarnegieL
 ```
 git clone https://github.com/CarnegieLearningWeb/upgrade-tester.git
 cd upgrade-tester
-python -m http.server 8000
+python -m http.server 4200
 ```
-3. Open your web browser and navigate to http://localhost:8000
+3. Open your web browser and navigate to http://localhost:4200

@@ -181,10 +181,10 @@
             justify-content: space-between;
             align-items: center;
             background: #FFFFFF;
+            padding: 0 30px;
         }
 
         #title {
-            margin-left: 30px;
             display: flex;
             flex-direction: row;
             justify-content: center;
@@ -533,6 +533,11 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@5.0.12/dist/browser/index.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <div id="g_id_onload"
+        data-client_id="656936260684-hdsihcgcdrcbeom72n56o8n5rb2mtc58.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse">
+    </div>
 </head>
 
 <body>
@@ -543,6 +548,7 @@
                 <h2 id="title-text">UpGrade Tester</h2>
                 <h4 id="subtitle-text">v5.0.12 - Enrollment</h4>
             </div>
+            <div class="g_id_signin" data-type="standard"></div>
         </div>
         <div id="main">
             <div class="card-wrapper shadowed">
@@ -558,9 +564,9 @@
                             <div class="select-wrapper">
                                 <label for="host-url">Host URL:</label>
                                 <select name="host-url" class="select" id="host-url">
-                                    <option value="http://localhost:3030" selected>http://localhost:3030</option>
+                                    <option value="https://upgradeapi.qa-cli.net" selected>https://upgradeapi.qa-cli.net</option>
                                     <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
-                                    <option value="https://upgradeapi.qa-cli.net">https://upgradeapi.qa-cli.net</option>
+                                    <option value="http://localhost:3030">http://localhost:3030</option>
                                 </select>
                             </div>
                             <div class="select-wrapper">
@@ -638,329 +644,359 @@
     </div>
 
     <script>
-        window.addEventListener("load", async () => {
-            const enrollmentSettings = {
-                enrollmentSettingsForm: document.getElementById("enrollment-settings-form"),
-                hostUrlSelect: document.getElementById("host-url"),
-                experimentSelect: document.getElementById("experiment"),
-                decisionPointSelect: document.getElementById("decision-point"),
-                userIdInput: document.getElementById("user-id"),
-                generateUserIdButton: document.getElementById("generate-user-id-button"),
-                groupTypeSelect: document.getElementById("group-type"),
-                groupIdInput: document.getElementById("group-id"),
-                generateGroupIdButton: document.getElementById("generate-group-id-button"),
-                markDecisionPointSelect: document.getElementById("mark-decision-point"),
-                enrollUserButton: document.getElementById("enroll-user-button"),
-                clearLogsButton: document.querySelectorAll("#table-top .fixed-text")[2],
-                logRowsWrapper: document.getElementById("log-rows-wrapper"),
-            }
-            try {
-                const tester = new UpGradeTester(enrollmentSettings);
-                await tester.init();
-            } catch (error) {
-                console.error(`${error.name}: ${error.message}`);
-                alert(`${error.name}: ${error.message}`);
-            }
-        });
+        (function() {
+            let token = null;
 
-        class UpGradeTester {
-            constructor(enrollmentSettings) {
-                this.enrollmentSettingsForm = enrollmentSettings.enrollmentSettingsForm;
-                this.hostUrlSelect = enrollmentSettings.hostUrlSelect;
-                this.experimentSelect = enrollmentSettings.experimentSelect;
-                this.decisionPointSelect = enrollmentSettings.decisionPointSelect;
-                this.userIdInput = enrollmentSettings.userIdInput;
-                this.generateUserIdButton = enrollmentSettings.generateUserIdButton;
-                this.groupTypeSelect = enrollmentSettings.groupTypeSelect;
-                this.groupIdInput = enrollmentSettings.groupIdInput;
-                this.generateGroupIdButton = enrollmentSettings.generateGroupIdButton;
-                this.markDecisionPointSelect = enrollmentSettings.markDecisionPointSelect;
-                this.enrollUserButton = enrollmentSettings.enrollUserButton;
-                this.clearLogsButton = enrollmentSettings.clearLogsButton;
-                this.logRowsWrapper = enrollmentSettings.logRowsWrapper;
-                this.fetchWrapper = new FetchWrapper();
-                this.idGenerator = new IdGenerator();
-                this.allExperiments = [];
-                this.selectedExperiment = null;
-                this.allDecisionPoints = [];
-                this.selectedDecisionPoint = null;
+            // Handle successful login
+            window.handleCredentialResponse = async (response) => {
+                // Retrieve token
+                token = response.credential;
+                const signInButton = document.querySelector(".g_id_signin");
+                const enrollUserButton = document.getElementById("enroll-user-button");
 
-                // Bind the listeners
-                this.hostUrlSelect.onchange = this.onHostUrlSelectChange.bind(this);
-                this.experimentSelect.onchange = this.onExperimentSelectChange.bind(this);
-                this.decisionPointSelect.onchange = this.onDecisionPointSelectChange.bind(this);
-                this.generateUserIdButton.onclick = this.onGenerateUserIdButtonClick.bind(this);
-                this.generateGroupIdButton.onclick = this.onGenerateGroupIdButtonClick.bind(this);
-                this.enrollmentSettingsForm.onsubmit = this.onEnrollmentSettingsFormSubmit.bind(this);
-                this.clearLogsButton.onclick = this.onClearLogsButtonClick.bind(this);
-            }
+                // Enable the Enroll User button
+                enrollUserButton.disabled = false;
 
-            async init() {
-                this.enrollUserButton.disabled = true;
-                await this.setExperimentSelectOptions();
-                this.setDecisionPointSelectOptions();
-                await this.setGroupTypeSelectOptions();
-                this.generateUserId();
-                this.generateGroupId();
-                if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
-                    return;
-                }
-                this.enrollUserButton.disabled = false;
-            }
+                // Hide the sign-in button
+                signInButton.style.display = "none";
 
-            async setExperimentSelectOptions() {
-                this.allExperiments = [];
-                this.selectedExperiment = null;
-                this.experimentSelect.options.length = 0;
-                const experiments = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments`);
-                for (const experiment of experiments) {
-                    const option = document.createElement("option");
-                    option.text = experiment.name;
-                    option.value = experiment.id;
-                    this.experimentSelect.add(option);
-                    this.allExperiments.push(experiment);
+                // Initialize UpGrade Tester
+                const enrollmentSettings = {
+                    enrollmentSettingsForm: document.getElementById("enrollment-settings-form"),
+                    hostUrlSelect: document.getElementById("host-url"),
+                    experimentSelect: document.getElementById("experiment"),
+                    decisionPointSelect: document.getElementById("decision-point"),
+                    userIdInput: document.getElementById("user-id"),
+                    generateUserIdButton: document.getElementById("generate-user-id-button"),
+                    groupTypeSelect: document.getElementById("group-type"),
+                    groupIdInput: document.getElementById("group-id"),
+                    generateGroupIdButton: document.getElementById("generate-group-id-button"),
+                    markDecisionPointSelect: document.getElementById("mark-decision-point"),
+                    enrollUserButton: document.getElementById("enroll-user-button"),
+                    clearLogsButton: document.querySelectorAll("#table-top .fixed-text")[2],
+                    logRowsWrapper: document.getElementById("log-rows-wrapper"),
                 }
-                if (this.experimentSelect.options.length && this.allExperiments.length) {
-                    this.experimentSelect.options[0].selected = true;
-                    this.selectedExperiment = this.allExperiments[0];
-                }
-            }
-
-            setDecisionPointSelectOptions() {
-                this.allDecisionPoints = [];
-                this.selectedDecisionPoint = null;
-                this.decisionPointSelect.options.length = 0;
-                if (this.selectedExperiment == null) {
-                    return;
-                }
-                for (const partition of this.selectedExperiment.partitions) {
-                    const option = document.createElement("option");
-                    option.text = `${partition.site}; ${partition.target}`;
-                    option.value = partition.id;
-                    this.decisionPointSelect.add(option);
-                    this.allDecisionPoints.push({
-                        site: partition.site,
-                        target: partition.target
-                    });
-                }
-                if (this.decisionPointSelect.options.length && this.allDecisionPoints.length) {
-                    this.decisionPointSelect.options[0].selected = true;
-                    this.selectedDecisionPoint = this.allDecisionPoints[0];
-                }
-            }
-
-            async setGroupTypeSelectOptions() {
-                this.groupTypeSelect.options.length = 0;
-                if (this.selectedExperiment == null) {
-                    return;
-                }
-                const { contextMetadata } = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments/contextMetadata`);
-                const appContext = this.selectedExperiment.context[0];
-                if (!(appContext in contextMetadata)) {
-                    return;
-                }
-                for (const groupType of contextMetadata[appContext].GROUP_TYPES) {
-                    const option = document.createElement("option");
-                    option.text = groupType;
-                    option.value = groupType;
-                    this.groupTypeSelect.add(option);
-                }
-                if (this.groupTypeSelect.options.length) {
-                    this.groupTypeSelect.options[0].selected = true;
-                }
-            }
-
-            generateUserId() {
-                this.userIdInput.value = this.idGenerator.uuidv4();
-            }
-
-            generateGroupId() {
-                this.groupIdInput.value = this.idGenerator.uuidv4();
-            }
-
-            async onHostUrlSelectChange() {
                 try {
-                    await this.init();
+                    const tester = new UpGradeTester(enrollmentSettings);
+                    await tester.init();
                 } catch (error) {
                     console.error(`${error.name}: ${error.message}`);
                     alert(`${error.name}: ${error.message}`);
                 }
-            }
 
-            onExperimentSelectChange() {
-                if (this.experimentSelect.options.selectedIndex < this.allExperiments.length) {
-                    this.selectedExperiment = this.allExperiments[this.experimentSelect.options.selectedIndex];
+                // Log out automatically after 1 hour
+                setTimeout(() => {
+                    // Clear token
+                    token = null;
+
+                    // Disable the Enroll User button
+                    enrollUserButton.disabled = true;
+
+                    // Show the sign-in button
+                    signInButton.style.display = "block";
+                }, 3600000);
+            };
+
+            class UpGradeTester {
+                constructor(enrollmentSettings) {
+                    this.enrollmentSettingsForm = enrollmentSettings.enrollmentSettingsForm;
+                    this.hostUrlSelect = enrollmentSettings.hostUrlSelect;
+                    this.experimentSelect = enrollmentSettings.experimentSelect;
+                    this.decisionPointSelect = enrollmentSettings.decisionPointSelect;
+                    this.userIdInput = enrollmentSettings.userIdInput;
+                    this.generateUserIdButton = enrollmentSettings.generateUserIdButton;
+                    this.groupTypeSelect = enrollmentSettings.groupTypeSelect;
+                    this.groupIdInput = enrollmentSettings.groupIdInput;
+                    this.generateGroupIdButton = enrollmentSettings.generateGroupIdButton;
+                    this.markDecisionPointSelect = enrollmentSettings.markDecisionPointSelect;
+                    this.enrollUserButton = enrollmentSettings.enrollUserButton;
+                    this.clearLogsButton = enrollmentSettings.clearLogsButton;
+                    this.logRowsWrapper = enrollmentSettings.logRowsWrapper;
+                    this.fetchWrapper = new FetchWrapper();
+                    this.idGenerator = new IdGenerator();
+                    this.allExperiments = [];
+                    this.selectedExperiment = null;
+                    this.allDecisionPoints = [];
+                    this.selectedDecisionPoint = null;
+
+                    // Bind the listeners
+                    this.hostUrlSelect.onchange = this.onHostUrlSelectChange.bind(this);
+                    this.experimentSelect.onchange = this.onExperimentSelectChange.bind(this);
+                    this.decisionPointSelect.onchange = this.onDecisionPointSelectChange.bind(this);
+                    this.generateUserIdButton.onclick = this.onGenerateUserIdButtonClick.bind(this);
+                    this.generateGroupIdButton.onclick = this.onGenerateGroupIdButtonClick.bind(this);
+                    this.enrollmentSettingsForm.onsubmit = this.onEnrollmentSettingsFormSubmit.bind(this);
+                    this.clearLogsButton.onclick = this.onClearLogsButtonClick.bind(this);
+                }
+
+                async init() {
+                    this.enrollUserButton.disabled = true;
+                    await this.setExperimentSelectOptions();
                     this.setDecisionPointSelectOptions();
-                }
-            }
-
-            onDecisionPointSelectChange() {
-                if (this.decisionPointSelect.options.selectedIndex < this.allDecisionPoints.length) {
-                    this.selectedDecisionPoint = this.allDecisionPoints[this.decisionPointSelect.options.selectedIndex];
-                }
-            }
-
-            onGenerateUserIdButtonClick(event) {
-                event.preventDefault();
-                this.generateUserId();
-            }
-
-            onGenerateGroupIdButtonClick(event) {
-                event.preventDefault();
-                this.generateGroupId();
-            }
-
-            async onEnrollmentSettingsFormSubmit(event) {
-                event.preventDefault();
-                if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
-                    return;
-                }
-                try {
-                    // Get settings
-                    const hostUrl = this.hostUrlSelect.value;
-                    const context = this.selectedExperiment.context[0];
-                    const site = this.selectedDecisionPoint.site;
-                    const target = this.selectedDecisionPoint.target;
-                    const userId = this.userIdInput.value;
-                    const groupType = this.groupTypeSelect.value;
-                    const groupId = this.groupIdInput.value;
-                    const markDecisionPoint = this.markDecisionPointSelect.value === "True";
-
-                    // Visit decision point
-                    const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
-                    const upClient = new UpgradeClient(userId, hostUrl, context);
-                    console.log("Initializing clientlib:", {userId, hostUrl, context});
-                    await upClient.init();
-                    const groupMembership = {
-                        [groupType]: [groupId]
-                    }
-                    const workingGroup = {
-                        [groupType]: groupId
-                    }
-                    console.log("Setting group membership:", groupMembership);
-                    await upClient.setGroupMembership(groupMembership);
-                    console.log("Setting working group:", workingGroup);
-                    await upClient.setWorkingGroup(workingGroup);
-                    console.log("Getting decision point assignment:", {site, target});
-                    const assignment = await upClient.getDecisionPointAssignment(site, target);
-                    this.addLogMessage(`The user <strong>${userId}</strong> reached the decision point <strong>${site}; ${target}</strong>`);
-                    let conditionCode = null;
-                    let markStatus = "no condition assigned";
-                    if (assignment !== null) {
-                        markStatus = "condition applied";
-                        conditionCode = assignment.getCondition();
-                    }
-                    console.log("Received condition:", {conditionCode});
-                    this.addLogMessage(`The user <strong>${userId}</strong> received the condition <strong>${conditionCode}</strong>`);
-                    if (!markDecisionPoint) {
+                    await this.setGroupTypeSelectOptions();
+                    this.generateUserId();
+                    this.generateGroupId();
+                    if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
                         return;
                     }
-                    console.log("Marking decision point:", {markStatus});
-                    await assignment.markDecisionPoint(markStatus);
-                    this.addLogMessage(`The user <strong>${userId}</strong> marked with a status <strong>${markStatus}</strong>`);
-                } catch (error) {
-                    console.error(`${error.name}: ${error.message}`);
-                    alert(`${error.name}: ${error.message}`);
+                    this.enrollUserButton.disabled = false;
                 }
-            }
 
-            addLogMessage(message) {
-                this.logRowsWrapper.innerHTML +=
-                    `
-                    <div class="table-row">
-                        <div class="table-col1">
-                            <p class="table-text">${new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", hour: "numeric", minute: "numeric" }).format(new Date())}</p>
-                        </div>
-                        <div class="table-col2">
-                            <p class="table-text">${message}</p>
-                        </div>
-                    </div>
-                    `;
-                this.logRowsWrapper.scrollTop = this.logRowsWrapper.scrollHeight;
-            }
-
-            onClearLogsButtonClick() {
-                this.logRowsWrapper.innerHTML = "";
-            }
-        }
-
-        class FetchWrapper {
-            constructor() {
-                this.headers = {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                };
-            }
-
-            async getData(response) {
-                const data = await response.json();
-                if (data.error) {
-                    throw data.error;
-                }
-                return data;
-            }
-
-            async fetchGetDelete(url, method) {
-                const response = await fetch(url, {
-                    method,
-                    headers: this.headers
-                });
-                return await this.getData(response);
-            }
-
-            async fetchPostPut(url, method, data = {}) {
-                const response = await fetch(url, {
-                    method,
-                    headers: this.headers,
-                    body: JSON.stringify(data)
-                });
-                return await this.getData(response);
-            }
-
-            async get(url) {
-                return await this.fetchGetDelete(url, "GET");
-            }
-
-            async post(url, data) {
-                return await this.fetchPostPut(url, "POST", data);
-            }
-
-            async put(url, data) {
-                return await this.fetchPostPut(url, "PUT", data);
-            }
-
-            async delete(url) {
-                return await this.fetchGetDelete(url, "DELETE");
-            }
-        }
-
-        class IdGenerator {
-            constructor() {
-                this.twoCharacterIdSet = new Set();
-                this.numCombinations = 36 * 36;
-            }
-
-            reset() {
-                this.twoCharacterIdSet.clear();
-            }
-
-            twoCharacterId() { // Note: UpGrade's twoCharacterId() function should be updated like this to prevent freezing
-                while (this.twoCharacterIdSet.size < this.numCombinations) {
-                    const id = Math.random().toString(36).substring(2, 4).toUpperCase();
-                    if (!this.twoCharacterIdSet.has(id)) {
-                        this.twoCharacterIdSet.add(id);
-                        return id;
+                async setExperimentSelectOptions() {
+                    this.allExperiments = [];
+                    this.selectedExperiment = null;
+                    this.experimentSelect.options.length = 0;
+                    const experiments = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments`);
+                    for (const experiment of experiments) {
+                        const option = document.createElement("option");
+                        option.text = experiment.name;
+                        option.value = experiment.id;
+                        this.experimentSelect.add(option);
+                        this.allExperiments.push(experiment);
+                    }
+                    if (this.experimentSelect.options.length && this.allExperiments.length) {
+                        this.experimentSelect.options[0].selected = true;
+                        this.selectedExperiment = this.allExperiments[0];
                     }
                 }
-                throw "twoCharacterId exceeded the limit";
+
+                setDecisionPointSelectOptions() {
+                    this.allDecisionPoints = [];
+                    this.selectedDecisionPoint = null;
+                    this.decisionPointSelect.options.length = 0;
+                    if (this.selectedExperiment == null) {
+                        return;
+                    }
+                    for (const partition of this.selectedExperiment.partitions) {
+                        const option = document.createElement("option");
+                        option.text = `${partition.site}; ${partition.target}`;
+                        option.value = partition.id;
+                        this.decisionPointSelect.add(option);
+                        this.allDecisionPoints.push({
+                            site: partition.site,
+                            target: partition.target
+                        });
+                    }
+                    if (this.decisionPointSelect.options.length && this.allDecisionPoints.length) {
+                        this.decisionPointSelect.options[0].selected = true;
+                        this.selectedDecisionPoint = this.allDecisionPoints[0];
+                    }
+                }
+
+                async setGroupTypeSelectOptions() {
+                    this.groupTypeSelect.options.length = 0;
+                    if (this.selectedExperiment == null) {
+                        return;
+                    }
+                    const { contextMetadata } = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments/contextMetadata`);
+                    const appContext = this.selectedExperiment.context[0];
+                    if (!(appContext in contextMetadata)) {
+                        return;
+                    }
+                    for (const groupType of contextMetadata[appContext].GROUP_TYPES) {
+                        const option = document.createElement("option");
+                        option.text = groupType;
+                        option.value = groupType;
+                        this.groupTypeSelect.add(option);
+                    }
+                    if (this.groupTypeSelect.options.length) {
+                        this.groupTypeSelect.options[0].selected = true;
+                    }
+                }
+
+                generateUserId() {
+                    this.userIdInput.value = this.idGenerator.uuidv4();
+                }
+
+                generateGroupId() {
+                    this.groupIdInput.value = this.idGenerator.uuidv4();
+                }
+
+                async onHostUrlSelectChange() {
+                    try {
+                        await this.init();
+                    } catch (error) {
+                        console.error(`${error.name}: ${error.message}`);
+                        alert(`${error.name}: ${error.message}`);
+                    }
+                }
+
+                onExperimentSelectChange() {
+                    if (this.experimentSelect.options.selectedIndex < this.allExperiments.length) {
+                        this.selectedExperiment = this.allExperiments[this.experimentSelect.options.selectedIndex];
+                        this.setDecisionPointSelectOptions();
+                    }
+                }
+
+                onDecisionPointSelectChange() {
+                    if (this.decisionPointSelect.options.selectedIndex < this.allDecisionPoints.length) {
+                        this.selectedDecisionPoint = this.allDecisionPoints[this.decisionPointSelect.options.selectedIndex];
+                    }
+                }
+
+                onGenerateUserIdButtonClick(event) {
+                    event.preventDefault();
+                    this.generateUserId();
+                }
+
+                onGenerateGroupIdButtonClick(event) {
+                    event.preventDefault();
+                    this.generateGroupId();
+                }
+
+                async onEnrollmentSettingsFormSubmit(event) {
+                    event.preventDefault();
+                    if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
+                        return;
+                    }
+                    try {
+                        // Get settings
+                        const hostUrl = this.hostUrlSelect.value;
+                        const context = this.selectedExperiment.context[0];
+                        const site = this.selectedDecisionPoint.site;
+                        const target = this.selectedDecisionPoint.target;
+                        const userId = this.userIdInput.value;
+                        const groupType = this.groupTypeSelect.value;
+                        const groupId = this.groupIdInput.value;
+                        const markDecisionPoint = this.markDecisionPointSelect.value === "True";
+
+                        // Visit decision point
+                        const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
+                        const upClient = new UpgradeClient(userId, hostUrl, context);
+                        console.log("Initializing clientlib:", {userId, hostUrl, context});
+                        await upClient.init();
+                        const groupMembership = {
+                            [groupType]: [groupId]
+                        }
+                        const workingGroup = {
+                            [groupType]: groupId
+                        }
+                        console.log("Setting group membership:", groupMembership);
+                        await upClient.setGroupMembership(groupMembership);
+                        console.log("Setting working group:", workingGroup);
+                        await upClient.setWorkingGroup(workingGroup);
+                        console.log("Getting decision point assignment:", {site, target});
+                        const assignment = await upClient.getDecisionPointAssignment(site, target);
+                        this.addLogMessage(`The user <strong>${userId}</strong> reached the decision point <strong>${site}; ${target}</strong>`);
+                        let conditionCode = null;
+                        let markStatus = "no condition assigned";
+                        if (assignment !== null) {
+                            markStatus = "condition applied";
+                            conditionCode = assignment.getCondition();
+                        }
+                        console.log("Received condition:", {conditionCode});
+                        this.addLogMessage(`The user <strong>${userId}</strong> received the condition <strong>${conditionCode}</strong>`);
+                        if (!markDecisionPoint) {
+                            return;
+                        }
+                        console.log("Marking decision point:", {markStatus});
+                        await assignment.markDecisionPoint(markStatus);
+                        this.addLogMessage(`The user <strong>${userId}</strong> marked with a status <strong>${markStatus}</strong>`);
+                    } catch (error) {
+                        console.error(`${error.name}: ${error.message}`);
+                        alert(`${error.name}: ${error.message}`);
+                    }
+                }
+
+                addLogMessage(message) {
+                    this.logRowsWrapper.innerHTML +=
+                        `
+                        <div class="table-row">
+                            <div class="table-col1">
+                                <p class="table-text">${new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", hour: "numeric", minute: "numeric" }).format(new Date())}</p>
+                            </div>
+                            <div class="table-col2">
+                                <p class="table-text">${message}</p>
+                            </div>
+                        </div>
+                        `;
+                    this.logRowsWrapper.scrollTop = this.logRowsWrapper.scrollHeight;
+                }
+
+                onClearLogsButtonClick() {
+                    this.logRowsWrapper.innerHTML = "";
+                }
             }
 
-            uuidv4() {
-                return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-                );
+            class FetchWrapper {
+                get headers() {
+                    return {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        ...(token && { "Authorization": `Bearer ${token}` })
+                    };
+                }
+
+                async getData(response) {
+                    const data = await response.json();
+                    if (data.error) {
+                        throw data.error;
+                    }
+                    return data;
+                }
+
+                async fetchGetDelete(url, method) {
+                    const response = await fetch(url, {
+                        method,
+                        headers: this.headers
+                    });
+                    return await this.getData(response);
+                }
+
+                async fetchPostPut(url, method, data = {}) {
+                    const response = await fetch(url, {
+                        method,
+                        headers: this.headers,
+                        body: JSON.stringify(data)
+                    });
+                    return await this.getData(response);
+                }
+
+                async get(url) {
+                    return await this.fetchGetDelete(url, "GET");
+                }
+
+                async post(url, data) {
+                    return await this.fetchPostPut(url, "POST", data);
+                }
+
+                async put(url, data) {
+                    return await this.fetchPostPut(url, "PUT", data);
+                }
+
+                async delete(url) {
+                    return await this.fetchGetDelete(url, "DELETE");
+                }
             }
-        }
+
+            class IdGenerator {
+                constructor() {
+                    this.twoCharacterIdSet = new Set();
+                    this.numCombinations = 36 * 36;
+                }
+
+                reset() {
+                    this.twoCharacterIdSet.clear();
+                }
+
+                twoCharacterId() { // Note: UpGrade's twoCharacterId() function should be updated like this to prevent freezing
+                    while (this.twoCharacterIdSet.size < this.numCombinations) {
+                        const id = Math.random().toString(36).substring(2, 4).toUpperCase();
+                        if (!this.twoCharacterIdSet.has(id)) {
+                            this.twoCharacterIdSet.add(id);
+                            return id;
+                        }
+                    }
+                    throw "twoCharacterId exceeded the limit";
+                }
+
+                uuidv4() {
+                    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                    );
+                }
+            }
+        })();
     </script>
 </body>
 
