@@ -73,7 +73,7 @@
         }
 
         select {
-            background: url("https://upgrade-demo.carnegielearning.com/asset/image/down-icon.png");
+            background: url("/assets/images/down-icon.png");
             background-repeat: no-repeat;
             background-position: right;
             background-size: 20px;
@@ -288,7 +288,7 @@
 
         #enrollment-settings-form {
             width: 500px;
-            height: 430px;
+            row-gap: 32px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -297,7 +297,7 @@
 
         #selects-container {
             width: 100%;
-            height: 350px;
+            row-gap: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -544,7 +544,7 @@
     <div id="wrapper">
         <div id="header" class="shadowed">
             <div id="title">
-                <img id="upgrade-logo" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-logo.png" alt="UpGrade Logo">
+                <img id="upgrade-logo" src="/assets/images/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
                 <h4 id="subtitle-text">v5.0.12 - Enrollment</h4>
             </div>
@@ -554,7 +554,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="upgrade-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-icon.png" alt="UpGrade Icon">
+                        <img class="card-icon recolor-444444" id="upgrade-icon" src="/assets/images/upgrade-icon.png" alt="UpGrade Icon">
                         <h4 class="card-text">Enrollment Settings</h4>
                     </div>
                 </div>
@@ -564,8 +564,8 @@
                             <div class="select-wrapper">
                                 <label for="host-url">Host URL:</label>
                                 <select name="host-url" class="select" id="host-url">
-                                    <option value="https://upgradeapi.qa-cli.net" selected>https://upgradeapi.qa-cli.net</option>
-                                    <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
+                                    <option value="https://apps.qa-cli.net/upgrade-service" selected>https://apps.qa-cli.net</option>
+                                    <option value="https://apps.qa-cli.com/upgrade-service">https://apps.qa-cli.com</option>
                                     <option value="http://localhost:3030">http://localhost:3030</option>
                                 </select>
                             </div>
@@ -615,7 +615,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/dev-console-icon.png" alt="Dev Console Icon">
+                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="/assets/images/dev-console-icon.png" alt="Dev Console Icon">
                         <h4 class="card-text">Enrollment Logs</h4>
                     </div>
                 </div>

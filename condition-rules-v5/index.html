@@ -73,7 +73,7 @@
         }
 
         select {
-            background: url("https://upgrade-demo.carnegielearning.com/asset/image/down-icon.png");
+            background: url("/assets/images/down-icon.png");
             background-repeat: no-repeat;
             background-position: right;
             background-size: 20px;
@@ -284,7 +284,7 @@
 
         #experiment-settings-form {
             width: 450px;
-            height: 430px;
+            row-gap: 32px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -293,7 +293,7 @@
 
         #selects-container {
             width: 100%;
-            height: 350px;
+            row-gap: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -451,7 +451,7 @@
     <div id="wrapper">
         <div id="header" class="shadowed">
             <div id="title">
-                <img id="upgrade-logo" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-logo.png" alt="UpGrade Logo">
+                <img id="upgrade-logo" src="/assets/images/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
                 <h4 id="subtitle-text">v5.0.12 - Condition Rules</h4>
             </div>
@@ -461,7 +461,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="upgrade-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-icon.png" alt="UpGrade Icon">
+                        <img class="card-icon recolor-444444" id="upgrade-icon" src="/assets/images/upgrade-icon.png" alt="UpGrade Icon">
                         <h4 class="card-text">Experiment Settings</h4>
                     </div>
                 </div>
@@ -469,11 +469,19 @@
                     <form id="experiment-settings-form">
                         <div id="selects-container">
                             <div class="select-wrapper">
-                                <label for="upgrade-host-url">UpGrade Host URL:</label>
-                                <select name="upgrade-host-url" class="select" id="upgrade-host-url">
-                                    <option value="https://upgradeapi.qa-cli.net" selected>https://upgradeapi.qa-cli.net</option>
-                                    <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
+                                <label for="host-url">UpGrade Host URL:</label>
+                                <select name="host-url" class="select" id="host-url">
+                                    <option value="https://apps.qa-cli.net/upgrade-service" selected>https://apps.qa-cli.net</option>
+                                    <option value="https://apps.qa-cli.com/upgrade-service">https://apps.qa-cli.com</option>
                                     <option value="http://localhost:3030">http://localhost:3030</option>
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="app-context">App Context:</label>
+                                <select name="app-context" class="select" id="app-context">
+                                    <option value="assign-prog" selected>assign-prog</option>
+                                    <option value="livehint-ai">livehint-ai</option>
+                                    <option value="mathstream">mathstream</option>
                                 </select>
                             </div>
                             <div class="select-wrapper">
@@ -527,7 +535,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/admin-tool-icon.png" alt="Admin Tool Icon">
+                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="/assets/images/admin-tool-icon.png" alt="Admin Tool Icon">
                         <h4 class="card-text">Test Results</h4>
                     </div>
                 </div>
@@ -630,7 +638,8 @@
 
             window.addEventListener("load", async () => {
                 const experimentSettingsForm = document.getElementById("experiment-settings-form");
-                const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
+                const hostUrlSelect = document.getElementById("host-url");
+                const appContextSelect = document.getElementById("app-context");
                 const assignmentUnitSelect = document.getElementById("unit-of-assignment");
                 const consistencyRuleSelect = document.getElementById("consistency-rule");
                 const experimentTypeSelect = document.getElementById("experiment-type");
@@ -706,8 +715,8 @@
                         }
                         // Experiment settings
                         const experimentSettings = {
-                            hostUrl: upgradeHostUrlSelect.value,
-                            context: "add",
+                            hostUrl: hostUrlSelect.value,
+                            context: appContextSelect.value,
                             assignmentUnit: assignmentUnitSelect.value.toLowerCase(),
                             consistencyRule: consistencyRuleSelect.value.toLowerCase(),
                             experimentType: experimentTypeSelect.value,
@@ -764,7 +773,7 @@
                         // Print and alert errors
                         console.error(`${error.name}: ${error.message}`);
                         if (error.message === "Failed to fetch") {
-                            alert(`Failed to access the UpGrade host URL: ${upgradeHostUrlSelect.value}.\nPlease make sure UpGrade is running on ${upgradeHostUrlSelect.value}.`);
+                            alert(`Failed to access the UpGrade host URL: ${hostUrlSelect.value}.\nPlease make sure UpGrade is running on ${hostUrlSelect.value}.`);
                             return;
                         }
                         alert(`${error.name}: ${error.message}`);
