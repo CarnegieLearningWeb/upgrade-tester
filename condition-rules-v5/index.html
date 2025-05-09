@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&amp;lang=en" />
-    <link rel="icon" type="image/x-icon" href="https://upgrade-demo.carnegielearning.com/asset/favicon/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="/assets/favicons/favicon.ico" />
     <style>
         /* ==================== universal ==================== */
 
@@ -73,7 +73,7 @@
         }
 
         select {
-            background: url("https://upgrade-demo.carnegielearning.com/asset/image/down-icon.png");
+            background: url("/assets/images/down-icon.png");
             background-repeat: no-repeat;
             background-position: right;
             background-size: 20px;
@@ -284,7 +284,7 @@
 
         #experiment-settings-form {
             width: 450px;
-            height: 430px;
+            row-gap: 32px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -293,7 +293,7 @@
 
         #selects-container {
             width: 100%;
-            height: 350px;
+            row-gap: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -451,7 +451,7 @@
     <div id="wrapper">
         <div id="header" class="shadowed">
             <div id="title">
-                <img id="upgrade-logo" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-logo.png" alt="UpGrade Logo">
+                <img id="upgrade-logo" src="/assets/images/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
                 <h4 id="subtitle-text">v5.0.12 - Condition Rules</h4>
             </div>
@@ -461,7 +461,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="upgrade-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/upgrade-icon.png" alt="UpGrade Icon">
+                        <img class="card-icon recolor-444444" id="upgrade-icon" src="/assets/images/upgrade-icon.png" alt="UpGrade Icon">
                         <h4 class="card-text">Experiment Settings</h4>
                     </div>
                 </div>
@@ -469,18 +469,22 @@
                     <form id="experiment-settings-form">
                         <div id="selects-container">
                             <div class="select-wrapper">
-                                <label for="upgrade-host-url">UpGrade Host URL:</label>
-                                <select name="upgrade-host-url" class="select" id="upgrade-host-url">
-                                    <option value="https://upgradeapi.qa-cli.net" selected>https://upgradeapi.qa-cli.net</option>
-                                    <option value="https://upgradeapi.qa-cli.com">https://upgradeapi.qa-cli.com</option>
+                                <label for="host-url">UpGrade Host URL:</label>
+                                <select name="host-url" class="select" id="host-url">
+                                    <option value="https://apps.qa-cli.net/upgrade-service" selected>https://apps.qa-cli.net</option>
+                                    <option value="https://apps.qa-cli.com/upgrade-service">https://apps.qa-cli.com</option>
                                     <option value="http://localhost:3030">http://localhost:3030</option>
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="app-context">App Context:</label>
+                                <select name="app-context" class="select" id="app-context">
                                 </select>
                             </div>
                             <div class="select-wrapper">
                                 <label for="unit-of-assignment">Unit of Assignment:</label>
                                 <select name="unit-of-assignment" class="select" id="unit-of-assignment">
                                     <option value="Individual" selected>Individual</option>
-                                    <option value="Group">Group</option>
                                 </select>
                             </div>
                             <div class="select-wrapper">
@@ -527,7 +531,7 @@
             <div class="card-wrapper shadowed">
                 <div class="card-header">
                     <div class="card-title">
-                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="https://upgrade-demo.carnegielearning.com/asset/image/admin-tool-icon.png" alt="Admin Tool Icon">
+                        <img class="card-icon recolor-444444" id="admin-tool-icon" src="/assets/images/admin-tool-icon.png" alt="Admin Tool Icon">
                         <h4 class="card-text">Test Results</h4>
                     </div>
                 </div>
@@ -603,17 +607,43 @@
             let token = null;
 
             // Handle successful login
-            window.handleCredentialResponse = (response) => {
+            window.handleCredentialResponse = async (response) => {
                 // Retrieve token
                 token = response.credential;
                 const signInButton = document.querySelector(".g_id_signin");
-                const runTestButton = document.getElementById("runtest-button");
-
-                // Enable the Run Test button
-                runTestButton.disabled = false;
 
                 // Hide the sign-in button
                 signInButton.style.display = "none";
+
+                // Initialize UpGrade Tester
+                const runTestButton = document.getElementById("runtest-button");
+                const conditionsTable = document.getElementById("conditions-table");
+                const responseTimeTable = document.getElementById("response-time-table");
+                const experimentSettings = {
+                    experimentSettingsForm: document.getElementById("experiment-settings-form"),
+                    hostUrlSelect: document.getElementById("host-url"),
+                    appContextSelect: document.getElementById("app-context"),
+                    assignmentUnitSelect: document.getElementById("unit-of-assignment"),
+                    consistencyRuleSelect: document.getElementById("consistency-rule"),
+                    experimentTypeSelect: document.getElementById("experiment-type"),
+                    postExperimentRuleSelect: document.getElementById("post-experiment-rule"),
+                    excludeIfReachedSelect: document.getElementById("exclude-if-reached"),
+                    statusUpdateDelay: document.getElementById("status-update-delay"),
+                    runTestButton,
+                    conditionsTable,
+                    studentCells: conditionsTable.getElementsByClassName("student-cell"),
+                    conditionCells: conditionsTable.getElementsByClassName("condition-cell"),
+                    responseTimeTable,
+                    responseTimeCells: responseTimeTable.getElementsByClassName("response-time-cell"),
+                    tableOverlay: document.getElementById("table-overlay"),
+                    loadingSpinner: document.getElementById("loading-spinner"),
+                };
+                try {
+                    const tester = new UpGradeTester(experimentSettings);
+                    await tester.init();
+                } catch (error) {
+                    this.logError(error);
+                }
 
                 // Log out automatically after 1 hour
                 setTimeout(() => {
@@ -628,169 +658,46 @@
                 }, 3600000);
             };
 
-            window.addEventListener("load", async () => {
-                const experimentSettingsForm = document.getElementById("experiment-settings-form");
-                const upgradeHostUrlSelect = document.getElementById("upgrade-host-url");
-                const assignmentUnitSelect = document.getElementById("unit-of-assignment");
-                const consistencyRuleSelect = document.getElementById("consistency-rule");
-                const experimentTypeSelect = document.getElementById("experiment-type");
-                const postExperimentRuleSelect = document.getElementById("post-experiment-rule");
-                const excludeIfReachedSelect = document.getElementById("exclude-if-reached");
-                const statusUpdateDelay = document.getElementById("status-update-delay");
-                const runTestButton = document.getElementById("runtest-button");
-                const conditionsTable = document.getElementById("conditions-table");
-                const studentCells = conditionsTable.getElementsByClassName("student-cell");
-                const conditionCells = conditionsTable.getElementsByClassName("condition-cell");
-                const responseTimeTable = document.getElementById("response-time-table");
-                const responseTimeCells = responseTimeTable.getElementsByClassName("response-time-cell");
-                const tableOverlay = document.getElementById("table-overlay");
-                const loadingSpinner = document.getElementById("loading-spinner");
-
-                assignmentUnitSelect.addEventListener("change", () => {
-                    if (assignmentUnitSelect.value === "Individual") {
-                        consistencyRuleSelect.innerHTML = `
-                            <option value="Individual" selected>Individual</option>`;
-                    } else if (assignmentUnitSelect.value === "Group") {
-                        consistencyRuleSelect.innerHTML = `
-                            <option value="Individual" selected>Individual</option>
-                            <option value="Group">Group</option>`;
-                    }
-                    for (let i = 0; i < studentCells.length; i++) {
-                        studentCells[i].innerText = `Student ${i + 1} (${assignmentUnitSelect.value === "Individual" ? "Individual" : `Group ${i < 3 ? "A" : "B"}`})`;
-                    }
-                });
-
-                experimentTypeSelect.addEventListener("change", () => {
-                    if (experimentTypeSelect.value === "Simple") {
-                        postExperimentRuleSelect.innerHTML = `
-                        <option value="Continue" selected>Continue</option>
-                        <option value="Default">Default</option>
-                        <option value="Condition A">Condition A</option>
-                        <option value="Condition B">Condition B</option>
-                        <option value="Condition C">Condition C</option>`;
-                    } else if (experimentTypeSelect.value === "Factorial") {
-                        postExperimentRuleSelect.innerHTML = `
-                        <option value="Continue" selected>Continue</option>
-                        <option value="Default">Default</option>
-                        <option value="factorA=A1; factorB=B1">factorA=A1; factorB=B1</option>
-                        <option value="factorA=A2; factorB=B1">factorA=A2; factorB=B1</option>
-                        <option value="factorA=A1; factorB=B2">factorA=A1; factorB=B2</option>
-                        <option value="factorA=A2; factorB=B2">factorA=A2; factorB=B2</option>`;
-                    }
-                });
-
-                // Called on run test button click
-                let isLoading = false;
-                experimentSettingsForm.addEventListener("submit", async (event) => {
-                    const setLoadingState = (state) => {
-                        isLoading = state;
-                        runTestButton.style.pointerEvents = state ? "none" : "auto";
-                        runTestButton.style.opacity = state ? 0.7 : 1;
-                        tableOverlay.style.opacity = state ? 1 : 0;
-                        loadingSpinner.style.opacity = state ? 1 : 0;
-                    }
-                    try {
-                        event.preventDefault();
-                        if (isLoading) {
-                            return;
-                        }
-                        // Enable loading
-                        setLoadingState(true);
-
-                        // Scroll to the bottom of the page
-                        if (document.body.scrollHeight > window.innerHeight) {
-                            window.scrollTo({
-                                top: document.body.scrollHeight / 2,
-                                behavior: "smooth"
-                            });
-                        }
-                        // Experiment settings
-                        const experimentSettings = {
-                            hostUrl: upgradeHostUrlSelect.value,
-                            context: "add",
-                            assignmentUnit: assignmentUnitSelect.value.toLowerCase(),
-                            consistencyRule: consistencyRuleSelect.value.toLowerCase(),
-                            experimentType: experimentTypeSelect.value,
-                            postExperimentRule: postExperimentRuleSelect.value.toLowerCase() === "continue" ? "continue" : "assign",
-                            postExperimentConditionCode: postExperimentRuleSelect.value.toLowerCase() === "continue" ? null : postExperimentRuleSelect.value,
-                            excludeIfReached: excludeIfReachedSelect.value.toLowerCase() === "true" ? true : false,
-                            statusUpdateDelayMillis: Number(statusUpdateDelay.value) * 1000,
-                            conditionCodes: experimentTypeSelect.value === "Simple" ? ["Condition A", "Condition B", "Condition C"] : ["factorA=A1; factorB=B1", "factorA=A2; factorB=B1", "factorA=A1; factorB=B2", "factorA=A2; factorB=B2"],
-                            queryKeys: [],
-                            conditionCells: conditionCells,
-                            conditionCellColorMap: {
-                                "Default": "rgb(235, 255, 235)",
-                                "Condition A": "rgb(255, 225, 225)",
-                                "Condition B": "rgb(255, 255, 225)",
-                                "Condition C": "rgb(245, 235, 255)",
-                                "factorA=A1; factorB=B1": "rgb(255, 225, 225)",
-                                "factorA=A2; factorB=B1": "rgb(255, 255, 225)",
-                                "factorA=A1; factorB=B2": "rgb(245, 235, 255)",
-                                "factorA=A2; factorB=B2": "rgb(225, 235, 255)"
-                            },
-                            responseTimeCells: responseTimeCells,
-                            responseTimeCellColorMap: {
-                                "Fast": "rgb(235, 255, 235)",
-                                "Moderate": "rgb(255, 255, 225)",
-                                "Slow": "rgb(255, 225, 225)"
-                            },
-                            minModerateTime: 250,
-                            minSlowTime: 500
-                        };
-                        // Create a tester class
-                        const tester = new UpGradeTester(experimentSettings);
-
-                        // Create experiment
-                        await tester.createExperiment();
-
-                        // Perform test
-                        await tester.performTest();
-
-                        // Delete the experiment
-                        await tester.deleteExperiment();
-
-                        // Disable loading
-                        setLoadingState(false);
-                    } catch (error) {
-                        // Disable loading
-                        setLoadingState(false);
-
-                        // Scroll to the top of the page
-                        window.scrollTo({
-                            top: 0,
-                            behavior: "smooth"
-                        });
-
-                        // Print and alert errors
-                        console.error(`${error.name}: ${error.message}`);
-                        if (error.message === "Failed to fetch") {
-                            alert(`Failed to access the UpGrade host URL: ${upgradeHostUrlSelect.value}.\nPlease make sure UpGrade is running on ${upgradeHostUrlSelect.value}.`);
-                            return;
-                        }
-                        alert(`${error.name}: ${error.message}`);
-                    }
-                });
-            });
-
             class UpGradeTester {
                 constructor(experimentSettings) {
-                    this.hostUrl = experimentSettings.hostUrl;
-                    this.context = experimentSettings.context;
-                    this.assignmentUnit = experimentSettings.assignmentUnit;
-                    this.consistencyRule = experimentSettings.consistencyRule;
-                    this.experimentType = experimentSettings.experimentType;
-                    this.postExperimentRule = experimentSettings.postExperimentRule;
-                    this.postExperimentConditionCode = experimentSettings.postExperimentConditionCode;
-                    this.excludeIfReached = experimentSettings.excludeIfReached;
-                    this.statusUpdateDelayMillis = experimentSettings.statusUpdateDelayMillis;
-                    this.conditionCodes = experimentSettings.conditionCodes;
-                    this.queryKeys = experimentSettings.queryKeys;
+                    this.experimentSettingsForm = experimentSettings.experimentSettingsForm;
+                    this.hostUrlSelect = experimentSettings.hostUrlSelect;
+                    this.appContextSelect = experimentSettings.appContextSelect;
+                    this.assignmentUnitSelect = experimentSettings.assignmentUnitSelect;
+                    this.consistencyRuleSelect = experimentSettings.consistencyRuleSelect;
+                    this.experimentTypeSelect = experimentSettings.experimentTypeSelect;
+                    this.postExperimentRuleSelect = experimentSettings.postExperimentRuleSelect;
+                    this.excludeIfReachedSelect = experimentSettings.excludeIfReachedSelect;
+                    this.statusUpdateDelay = experimentSettings.statusUpdateDelay;
+                    this.runTestButton = experimentSettings.runTestButton;
+                    this.conditionsTable = experimentSettings.conditionsTable;
+                    this.studentCells = experimentSettings.studentCells;
                     this.conditionCells = experimentSettings.conditionCells;
-                    this.conditionCellColorMap = experimentSettings.conditionCellColorMap;
+                    this.responseTimeTable = experimentSettings.responseTimeTable;
                     this.responseTimeCells = experimentSettings.responseTimeCells;
-                    this.responseTimeCellColorMap = experimentSettings.responseTimeCellColorMap;
-                    this.minModerateTime = experimentSettings.minModerateTime;
-                    this.minSlowTime = experimentSettings.minSlowTime;
+                    this.tableOverlay = experimentSettings.tableOverlay;
+                    this.loadingSpinner = experimentSettings.loadingSpinner;
+                    this.queryKeys = [];
+                    this.conditionCodes = [];
+                    this.appContextGroupTypesMap = {};
+                    this.isLoading = false;
+                    this.conditionCellColorMap = {
+                        "Default": "rgb(235, 255, 235)",
+                        "Condition A": "rgb(255, 225, 225)",
+                        "Condition B": "rgb(255, 255, 225)",
+                        "Condition C": "rgb(245, 235, 255)",
+                        "factorA=A1; factorB=B1": "rgb(255, 225, 225)",
+                        "factorA=A2; factorB=B1": "rgb(255, 255, 225)",
+                        "factorA=A1; factorB=B2": "rgb(245, 235, 255)",
+                        "factorA=A2; factorB=B2": "rgb(225, 235, 255)"
+                    };
+                    this.responseTimeCellColorMap = {
+                        "Fast": "rgb(235, 255, 235)",
+                        "Moderate": "rgb(255, 255, 225)",
+                        "Slow": "rgb(255, 225, 225)"
+                    };
+                    this.minModerateTime = 250;
+                    this.minSlowTime = 500;
                     this.conditionCellMap = {};
                     for (let i = 0; i < this.conditionCells.length; i += 3) {
                         this.conditionCellMap[`student${Math.floor(i / 3) + 1}`] = {
@@ -813,21 +720,171 @@
                     this.experimentStatus = "";
                     this.fetchWrapper = new FetchWrapper();
                     this.idGenerator = new IdGenerator();
+
+                    // Bind the listeners
+                    this.hostUrlSelect.onchange = this.onHostUrlSelectChange.bind(this);
+                    this.appContextSelect.onchange = this.onAppContextSelectChange.bind(this);
+                    this.assignmentUnitSelect.onchange = this.onAssignmentUnitSelectChange.bind(this);
+                    this.experimentTypeSelect.onchange = this.onExperimentTypeSelectChange.bind(this);
+                    this.experimentSettingsForm.onsubmit = this.onExperimentSettingsFormSubmit.bind(this);
+
+                    // Initialize states
+                    this.onExperimentTypeSelectChange();
+                }
+
+                async init() {
+                    this.runTestButton.disabled = true;
+                    await this.setAppContextSelectOptions();
+                    this.runTestButton.disabled = false;
+                }
+
+                async setAppContextSelectOptions() {
+                    this.appContextSelect.options.length = 0;
+                    this.appContextGroupTypesMap = {};
+                    const { contextMetadata } = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments/contextMetadata`);
+                    for (const appContext of Object.keys(contextMetadata)) {
+                        const option = document.createElement("option");
+                        option.text = appContext;
+                        option.value = appContext;
+                        this.appContextSelect.add(option);
+                        this.appContextGroupTypesMap[appContext] = contextMetadata[appContext].GROUP_TYPES;
+                    }
+                    if (this.appContextSelect.options.length) {
+                        this.appContextSelect.options[0].selected = true;
+                        this.onAppContextSelectChange();
+                    }
+                }
+
+                async onHostUrlSelectChange() {
+                    try {
+                        await this.init();
+                    } catch (error) {
+                        this.logError(error);
+                    }
+                }
+
+                onAppContextSelectChange() {
+                    this.assignmentUnitSelect.options.length = 1; // Keep only the first option (Individual)
+                    const groupTypes = this.appContextGroupTypesMap[this.appContextSelect.value];
+                    for (const groupType of groupTypes) {
+                        const option = document.createElement("option");
+                        option.text = `Group (${groupType})`;
+                        option.value = groupType; // The actual group type is stored as a value
+                        this.assignmentUnitSelect.add(option);
+                    }
+                    this.onAssignmentUnitSelectChange();
+                }
+
+                onAssignmentUnitSelectChange() {
+                    if (this.assignmentUnitSelect.value === "Individual") {
+                        this.consistencyRuleSelect.innerHTML = `
+                            <option value="Individual" selected>Individual</option>`;
+                    } else {
+                        const prevValue = this.consistencyRuleSelect.value;
+                        this.consistencyRuleSelect.innerHTML = `
+                            <option value="Individual">Individual</option>
+                            <option value="Group">Group</option>`;
+                        this.consistencyRuleSelect.value = prevValue;
+                    }
+                    for (let i = 0; i < this.studentCells.length; i++) {
+                        this.studentCells[i].innerText = `Student ${i + 1} (${this.assignmentUnitSelect.value === "Individual" ? "Individual" : `Group ${i < 3 ? "A" : "B"}`})`;
+                    }
+                }
+
+                onExperimentTypeSelectChange() {
+                    if (this.experimentTypeSelect.value === "Simple") {
+                        this.postExperimentRuleSelect.innerHTML = `
+                        <option value="Continue" selected>Continue</option>
+                        <option value="Default">Default</option>
+                        <option value="Condition A">Condition A</option>
+                        <option value="Condition B">Condition B</option>
+                        <option value="Condition C">Condition C</option>`;
+                        this.conditionCodes = ["Condition A", "Condition B", "Condition C"];
+                    } else if (this.experimentTypeSelect.value === "Factorial") {
+                        this.postExperimentRuleSelect.innerHTML = `
+                        <option value="Continue" selected>Continue</option>
+                        <option value="Default">Default</option>
+                        <option value="factorA=A1; factorB=B1">factorA=A1; factorB=B1</option>
+                        <option value="factorA=A2; factorB=B1">factorA=A2; factorB=B1</option>
+                        <option value="factorA=A1; factorB=B2">factorA=A1; factorB=B2</option>
+                        <option value="factorA=A2; factorB=B2">factorA=A2; factorB=B2</option>`;
+                        this.conditionCodes = ["factorA=A1; factorB=B1", "factorA=A2; factorB=B1", "factorA=A1; factorB=B2", "factorA=A2; factorB=B2"];
+                    }
+                }
+
+                async onExperimentSettingsFormSubmit(event) {
+                    event.preventDefault();
+                    try {
+                        if (this.isLoading) {
+                            return;
+                        }
+                        // Enable loading
+                        this.setLoadingState(true);
+
+                        // Scroll to the bottom of the page
+                        if (document.body.scrollHeight > window.innerHeight) {
+                            window.scrollTo({
+                                top: document.body.scrollHeight / 2,
+                                behavior: "smooth"
+                            });
+                        }
+
+                        // Create experiment
+                        await this.createExperiment();
+
+                        // Perform test
+                        await this.performTest();
+
+                        // Delete the experiment
+                        await this.deleteExperiment();
+
+                        // Disable loading
+                        this.setLoadingState(false);
+                    } catch (error) {
+                        // Disable loading
+                        this.setLoadingState(false);
+
+                        // Scroll to the top of the page
+                        window.scrollTo({
+                            top: 0,
+                            behavior: "smooth"
+                        });
+
+                        // Print and alert error
+                        this.logError(error);
+                    }
+                }
+
+                logError(error) {
+                    console.error(error);
+                    if (error.message === "Failed to fetch") {
+                        alert(`Failed to access the UpGrade host URL: ${this.hostUrlSelect.value}.\nPlease make sure UpGrade is running on ${this.hostUrlSelect.value}.`);
+                        return;
+                    }
+                    alert(error);
+                }
+
+                setLoadingState(state) {
+                    this.isLoading = state;
+                    this.runTestButton.style.pointerEvents = state ? "none" : "auto";
+                    this.runTestButton.style.opacity = state ? 0.7 : 1;
+                    this.tableOverlay.style.opacity = state ? 1 : 0;
+                    this.loadingSpinner.style.opacity = state ? 1 : 0;
                 }
 
                 async deleteExperiment() {
-                    await this.fetchWrapper.delete(`${this.hostUrl}/api/experiments/${this.experimentId}`);
+                    await this.fetchWrapper.delete(`${this.hostUrlSelect.value}/api/experiments/${this.experimentId}`);
                 }
 
                 async deleteAllExperiments() {
-                    const experiments = await this.fetchWrapper.get(`${this.hostUrl}/api/experiments`);
+                    const experiments = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api/experiments`);
                     for (const experiment of experiments) {
                         await this.deleteExperiment(experiment.id);
                     }
                 }
 
                 async saveMetrics() {
-                    await this.fetchWrapper.post(`${this.hostUrl}/api/metric/save`, {
+                    await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/metric/save`, {
                         metricUnit: [{
                                 metric: "durationSeconds",
                                 datatype: "continuous"
@@ -841,7 +898,7 @@
                 }
 
                 async getVersion() {
-                    const info = await this.fetchWrapper.get(`${this.hostUrl}/api`);
+                    const info = await this.fetchWrapper.get(`${this.hostUrlSelect.value}/api`);
                     const parts = info.version.split(".");
                     return {
                         full: info.version,
@@ -870,7 +927,7 @@
                             twoCharacterId: this.idGenerator.twoCharacterId()
                         }
                         payloadIdMap[conditionCode] = this.idGenerator.uuidv4();
-                        if (this.experimentType !== "Factorial") {
+                        if (this.experimentTypeSelect.value !== "Factorial") {
                             continue;
                         }
                         levelCombinationIdMap[conditionCode] = conditionCode.split("; ").map(conditionCode => {
@@ -892,6 +949,8 @@
                         target: `Target_${this.experimentId}`
                     };
                     const segmentNamePrefix = this.idGenerator.uuidv4();
+                    const postExperimentRule = this.postExperimentRuleSelect.value === "Continue" ? "continue" : "assign";
+                    const postExperimentConditionCode = this.postExperimentRuleSelect.value === "Continue" ? null : this.postExperimentRuleSelect.value;
                     const experimentData = {
                         createdAt: this.date,
                         updatedAt: this.date,
@@ -899,35 +958,35 @@
                         id: this.experimentId,
                         name: `Experiment_${this.experimentId}`,
                         description: "",
-                        context: [this.context],
+                        context: [this.appContextSelect.value],
                         state: "inactive",
                         startOn: null,
-                        consistencyRule: this.consistencyRule,
-                        assignmentUnit: this.assignmentUnit,
-                        postExperimentRule: this.postExperimentRule,
+                        consistencyRule: this.consistencyRuleSelect.value.toLowerCase(),
+                        assignmentUnit: this.assignmentUnitSelect.value === "Individual" ? "individual" : "group",
+                        postExperimentRule,
                         enrollmentCompleteCondition: null,
                         endOn: null,
-                        revertTo: this.postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(this.postExperimentConditionCode) ? conditionIdMap[this.postExperimentConditionCode].id : null : null,
+                        revertTo: postExperimentRule === "assign" ? conditionIdMap.hasOwnProperty(postExperimentConditionCode) ? conditionIdMap[postExperimentConditionCode].id : null : null,
                         tags: [],
-                        group: this.assignmentUnit === "group" ? "add-group1" : null,
+                        group: this.assignmentUnitSelect.value === "Individual" ? null : this.assignmentUnitSelect.value,
                         conditionOrder: null,
                         assignmentAlgorithm: "random",
                         logging: false,
                         filterMode: "includeAll",
-                        backendVersion: backendVersion,
-                        type: this.experimentType,
+                        backendVersion,
+                        type: this.experimentTypeSelect.value,
                         partitions: [this.makePartition(decisionPoint)],
                         conditions: this.conditionCodes.map(conditionCode => this.makeCondition(conditionCode, conditionIdMap, payloadIdMap, levelCombinationIdMap, false)),
                         stateTimeLogs: [],
                         queries: this.makeQueries(),
                         experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
                         experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
-                        factors: this.experimentType !== "Factorial" ? [] : this.makeFactors(this.conditionCodes, levelIdMap),
+                        factors: this.experimentTypeSelect.value !== "Factorial" ? [] : this.makeFactors(this.conditionCodes, levelIdMap),
                         stratificationFactor: null,
                         conditionPayloads: this.makePayloads(decisionPoint, conditionIdMap, payloadIdMap, levelCombinationIdMap, useReference)
                     }
                     // console.log("experimentData:", JSON.stringify(experimentData, null, 2));
-                    await this.fetchWrapper.post(`${this.hostUrl}/api/experiments`, experimentData);
+                    await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments`, experimentData);
                 }
 
                 async performTest() {
@@ -954,7 +1013,7 @@
                     const student3 = makeStudent("student3");
                     const student4 = makeStudent("student4");
                     const student5 = makeStudent("student5");
-                    if (this.assignmentUnit === "individual") {
+                    if (this.assignmentUnitSelect.value === "Individual") {
                         // Student 1 (Individual) visits the decision point the first time (Inactive)
                         await this.visitDecisionPoint(student1.name, student1.id, null);
 
@@ -990,7 +1049,7 @@
 
                         // Student 5 (Individual) visits the decision point the first time (Enrollment Complete)
                         await this.visitDecisionPoint(student5.name, student5.id, null);
-                    } else if (this.assignmentUnit === "group") {
+                    } else {
                         // Student 1 (Group A) visits the decision point the first time (Inactive)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
@@ -1023,8 +1082,6 @@
 
                         // Student 5 (Group B) visits the decision point the first time (Enrolling)
                         await this.visitDecisionPoint(student5.name, student5.id, "Group B");
-                    } else {
-                        throw "Invalid assignmentUnit"
                     }
                 }
 
@@ -1032,28 +1089,30 @@
                     if (experimentStatus === this.experimentStatus) {
                         return;
                     }
-                    await this.fetchWrapper.post(`${this.hostUrl}/api/experiments/state`, {
+                    await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments/state`, {
                         experimentId: this.experimentId,
                         state: experimentStatus
                     });
                     this.experimentStatus = experimentStatus;
 
                     // Delay for a specified number of milliseconds
-                    await new Promise(resolve => setTimeout(resolve, this.statusUpdateDelayMillis));
+                    const statusUpdateDelayMillis = Number(this.statusUpdateDelay.value) * 1000
+                    await new Promise(resolve => setTimeout(resolve, statusUpdateDelayMillis));
                 }
 
                 async visitDecisionPoint(studentName, studentId, group) {
                     const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
-                    const upClient = new UpgradeClient(studentId, this.hostUrl, this.context);
+                    const upClient = new UpgradeClient(studentId, this.hostUrlSelect.value, this.appContextSelect.value);
                     const initStartTime = Date.now();
                     await upClient.init();
                     this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
-                    if (group) {
+                    if (group && this.assignmentUnitSelect.value !== "Individual") {
+                        const groupType = this.assignmentUnitSelect.value;
                         const groupMembership = {
-                            "add-group1":  ["Group A", "Group B"]
+                            [groupType]:  ["Group A", "Group B"]
                         }
                         const workingGroup = {
-                            "add-group1": group
+                            [groupType]: group
                         }
                         await upClient.setGroupMembership(groupMembership);
                         await upClient.setWorkingGroup(workingGroup);
@@ -1109,8 +1168,8 @@
                         target: decisionPoint.target,
                         description: "",
                         order: 1,
-                        excludeIfReached: this.excludeIfReached,
-                        ...(this.experimentType === "Factorial" && { conditionPayloads: [] })
+                        excludeIfReached: this.excludeIfReachedSelect.value === "True",
+                        ...(this.experimentTypeSelect.value === "Factorial" && { conditionPayloads: [] })
                     };
                     return partition;
                 }
@@ -1122,12 +1181,12 @@
                         versionNumber: 1,
                         id: conditionIdMap[conditionCode].id,
                         twoCharacterId: conditionIdMap[conditionCode].twoCharacterId,
-                        name: this.experimentType === "Simple" ? "" : conditionCode,
+                        name: this.experimentTypeSelect.value === "Simple" ? "" : conditionCode,
                         description: null,
                         conditionCode: conditionCode,
                         assignmentWeight: 100 / this.conditionCodes.length,
                         order: 1,
-                        ...(!isParentCondition && this.experimentType === "Simple" &&
+                        ...(!isParentCondition && this.experimentTypeSelect.value === "Simple" &&
                         {
                             conditionPayloads: [
                                 {
@@ -1141,7 +1200,7 @@
                             ],
                             levelCombinationElements: []
                         }),
-                        ...(this.experimentType === "Factorial" && { levelCombinationElements: this.makeLevelCombinationElements(conditionCode, levelCombinationIdMap) })
+                        ...(this.experimentTypeSelect.value === "Factorial" && { levelCombinationElements: this.makeLevelCombinationElements(conditionCode, levelCombinationIdMap) })
                     }
                     return condition;
                 }
@@ -1175,7 +1234,7 @@
                             versionNumber: 1,
                             id: payloadIdMap[conditionCode],
                             parentCondition: useReference ? conditionIdMap[conditionCode].id : this.makeCondition(conditionCode, conditionIdMap, payloadIdMap, levelCombinationIdMap, true),
-                            ...(this.experimentType === "Simple" && { decisionPoint: useReference ? decisionPoint.id : this.makePartition(decisionPoint) }),
+                            ...(this.experimentTypeSelect.value === "Simple" && { decisionPoint: useReference ? decisionPoint.id : this.makePartition(decisionPoint) }),
                             payload: {
                                 type: "string",
                                 value: conditionCode
@@ -1277,7 +1336,7 @@
                             id: this.idGenerator.uuidv4(),
                             name: name,
                             description: name,
-                            context: this.context,
+                            context: this.appContextSelect.value,
                             type: "private",
                             individualForSegment: [],
                             groupForSegment: groupForSegment,
@@ -1356,7 +1415,7 @@
                             return id;
                         }
                     }
-                    throw "twoCharacterId exceeded the limit";
+                    throw new Error("twoCharacterId exceeded the limit");
                 }
 
                 uuidv4() {
