@@ -2,7 +2,7 @@
 <html lang="en-US">
 
 <head>
-    <title>UpGrade Tester v5.0.12 - Enrollment</title>
+    <title>UpGrade Tester v6.0.13 - Enrollment</title>
     <meta charset=utf-8 />
     <meta name="description" content="UpGrade Tester" />
     <meta name="keywords" content="UpGrade, Tester" />
@@ -532,7 +532,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@5.0.12/dist/browser/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@6.0.13/dist/browser/index.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div id="g_id_onload"
         data-client_id="656936260684-hdsihcgcdrcbeom72n56o8n5rb2mtc58.apps.googleusercontent.com"
@@ -546,7 +546,7 @@
             <div id="title">
                 <img id="upgrade-logo" src="/assets/images/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
-                <h4 id="subtitle-text">v5.0.12 - Enrollment</h4>
+                <h4 id="subtitle-text">v6.0.13 - Enrollment</h4>
             </div>
             <div class="g_id_signin" data-type="standard"></div>
         </div>
@@ -863,7 +863,6 @@
                         const markDecisionPoint = this.markDecisionPointSelect.value === "True";
 
                         // Visit decision point
-                        const UpgradeClient = window["upgrade-client-lib"].UpgradeClient;
                         const upClient = new UpgradeClient(userId, hostUrl, context);
                         console.log("Initializing clientlib:", {userId, hostUrl, context});
                         await upClient.init();
