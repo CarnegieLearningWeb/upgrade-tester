@@ -637,6 +637,8 @@
                             </div>
                         </div>
                     </div>
+                    <div id="table-overlay"></div>
+                    <div id="loading-spinner"></div>
                 </div>
             </div>
             <div id="bottom-gap"></div>
@@ -672,6 +674,8 @@
                     enrollUserButton,
                     clearLogsButton: document.querySelectorAll("#table-top .fixed-text")[2],
                     logRowsWrapper: document.getElementById("log-rows-wrapper"),
+                    tableOverlay: document.getElementById("table-overlay"),
+                    loadingSpinner: document.getElementById("loading-spinner"),
                 }
                 const tester = new UpGradeTester(enrollmentSettings);
                 try {
@@ -708,12 +712,15 @@
                     this.enrollUserButton = enrollmentSettings.enrollUserButton;
                     this.clearLogsButton = enrollmentSettings.clearLogsButton;
                     this.logRowsWrapper = enrollmentSettings.logRowsWrapper;
+                    this.tableOverlay = enrollmentSettings.tableOverlay;
+                    this.loadingSpinner = enrollmentSettings.loadingSpinner;
                     this.fetchWrapper = new FetchWrapper();
                     this.idGenerator = new IdGenerator();
                     this.allExperiments = [];
                     this.selectedExperiment = null;
                     this.allDecisionPoints = [];
                     this.selectedDecisionPoint = null;
+                    this.isLoading = false;
 
                     // Bind the listeners
                     this.hostUrlSelect.onchange = this.onHostUrlSelectChange.bind(this);
@@ -857,6 +864,20 @@
                         return;
                     }
                     try {
+                        if (this.isLoading) {
+                            return;
+                        }
+                        // Enable loading
+                        this.setLoadingState(true);
+
+                        // Scroll to the bottom of the page
+                        if (document.body.scrollHeight > window.innerHeight) {
+                            window.scrollTo({
+                                top: document.body.scrollHeight / 2,
+                                behavior: "smooth"
+                            });
+                        }
+
                         // Get settings
                         const hostUrl = this.hostUrlSelect.value;
                         const context = this.selectedExperiment.context[0];
@@ -895,12 +916,26 @@
                         console.log("Received condition:", {conditionCode});
                         this.addLogMessage(`The user <strong>${userId}</strong> received the condition <strong>${conditionCode}</strong>`);
                         if (!markDecisionPoint) {
+                            this.setLoadingState(false);
                             return;
                         }
                         console.log("Marking decision point:", {markStatus});
                         await assignment.markDecisionPoint(markStatus);
                         this.addLogMessage(`The user <strong>${userId}</strong> marked with a status <strong>${markStatus}</strong>`);
+
+                        // Disable loading
+                        this.setLoadingState(false);
                     } catch (error) {
+                        // Disable loading
+                        this.setLoadingState(false);
+
+                        // Scroll to the top of the page
+                        window.scrollTo({
+                            top: 0,
+                            behavior: "smooth"
+                        });
+
+                        // Print and alert error
                         this.logError(error);
                     }
                 }
@@ -912,6 +947,14 @@
                         return;
                     }
                     alert(error);
+                }
+
+                setLoadingState(state) {
+                    this.isLoading = state;
+                    this.enrollUserButton.style.pointerEvents = state ? "none" : "auto";
+                    this.enrollUserButton.style.opacity = state ? 0.7 : 1;
+                    this.tableOverlay.style.opacity = state ? 1 : 0;
+                    this.loadingSpinner.style.opacity = state ? 1 : 0;
                 }
 
                 addLogMessage(message) {
