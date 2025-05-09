@@ -867,16 +867,18 @@
                         const upClient = new UpgradeClient(userId, hostUrl, context);
                         console.log("Initializing clientlib:", {userId, hostUrl, context});
                         await upClient.init();
-                        const groupMembership = {
-                            [groupType]: [groupId]
+                        if (groupType) {
+                            const groupMembership = {
+                                [groupType]: [groupId]
+                            }
+                            const workingGroup = {
+                                [groupType]: groupId
+                            }
+                            console.log("Setting group membership:", groupMembership);
+                            await upClient.setGroupMembership(groupMembership);
+                            console.log("Setting working group:", workingGroup);
+                            await upClient.setWorkingGroup(workingGroup);
                         }
-                        const workingGroup = {
-                            [groupType]: groupId
-                        }
-                        console.log("Setting group membership:", groupMembership);
-                        await upClient.setGroupMembership(groupMembership);
-                        console.log("Setting working group:", workingGroup);
-                        await upClient.setWorkingGroup(workingGroup);
                         console.log("Getting decision point assignment:", {site, target});
                         const assignment = await upClient.getDecisionPointAssignment(site, target);
                         this.addLogMessage(`The user <strong>${userId}</strong> reached the decision point <strong>${site}; ${target}</strong>`);
