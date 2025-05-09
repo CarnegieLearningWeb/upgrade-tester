@@ -822,6 +822,11 @@
                         this.setDecisionPointSelectOptions();
                         try {
                             await this.setGroupTypeSelectOptions();
+                            this.generateUserId();
+                            this.generateGroupId();
+                            if (this.selectedExperiment == null || this.selectedDecisionPoint == null) {
+                                return;
+                            }
                             this.enrollUserButton.disabled = false;
                         } catch (error) {
                             this.enrollUserButton.disabled = true;
