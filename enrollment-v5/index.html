@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&amp;lang=en" />
-    <link rel="icon" type="image/x-icon" href="https://upgrade-demo.carnegielearning.com/asset/favicon/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="/assets/favicons/favicon.ico" />
     <style>
         /* ==================== universal ==================== */
 
@@ -652,15 +652,12 @@
                 // Retrieve token
                 token = response.credential;
                 const signInButton = document.querySelector(".g_id_signin");
-                const enrollUserButton = document.getElementById("enroll-user-button");
-
-                // Enable the Enroll User button
-                enrollUserButton.disabled = false;
 
                 // Hide the sign-in button
                 signInButton.style.display = "none";
 
                 // Initialize UpGrade Tester
+                const enrollUserButton = document.getElementById("enroll-user-button");
                 const enrollmentSettings = {
                     enrollmentSettingsForm: document.getElementById("enrollment-settings-form"),
                     hostUrlSelect: document.getElementById("host-url"),
@@ -672,7 +669,7 @@
                     groupIdInput: document.getElementById("group-id"),
                     generateGroupIdButton: document.getElementById("generate-group-id-button"),
                     markDecisionPointSelect: document.getElementById("mark-decision-point"),
-                    enrollUserButton: document.getElementById("enroll-user-button"),
+                    enrollUserButton,
                     clearLogsButton: document.querySelectorAll("#table-top .fixed-text")[2],
                     logRowsWrapper: document.getElementById("log-rows-wrapper"),
                 }
@@ -680,8 +677,7 @@
                     const tester = new UpGradeTester(enrollmentSettings);
                     await tester.init();
                 } catch (error) {
-                    console.error(`${error.name}: ${error.message}`);
-                    alert(`${error.name}: ${error.message}`);
+                    this.logError(error);
                 }
 
                 // Log out automatically after 1 hour
@@ -816,8 +812,7 @@
                     try {
                         await this.init();
                     } catch (error) {
-                        console.error(`${error.name}: ${error.message}`);
-                        alert(`${error.name}: ${error.message}`);
+                        this.logError(error);
                     }
                 }
 
@@ -893,9 +888,17 @@
                         await assignment.markDecisionPoint(markStatus);
                         this.addLogMessage(`The user <strong>${userId}</strong> marked with a status <strong>${markStatus}</strong>`);
                     } catch (error) {
-                        console.error(`${error.name}: ${error.message}`);
-                        alert(`${error.name}: ${error.message}`);
+                        this.logError(error);
                     }
+                }
+
+                logError(error) {
+                    console.error(error);
+                    if (error.message === "Failed to fetch") {
+                        alert(`Failed to access the UpGrade host URL: ${this.hostUrlSelect.value}.\nPlease make sure UpGrade is running on ${this.hostUrlSelect.value}.`);
+                        return;
+                    }
+                    alert(error);
                 }
 
                 addLogMessage(message) {
@@ -987,7 +990,7 @@
                             return id;
                         }
                     }
-                    throw "twoCharacterId exceeded the limit";
+                    throw new Error("twoCharacterId exceeded the limit");
                 }
 
                 uuidv4() {
