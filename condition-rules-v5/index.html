@@ -638,11 +638,11 @@
                     tableOverlay: document.getElementById("table-overlay"),
                     loadingSpinner: document.getElementById("loading-spinner"),
                 };
+                const tester = new UpGradeTester(experimentSettings);
                 try {
-                    const tester = new UpGradeTester(experimentSettings);
                     await tester.init();
                 } catch (error) {
-                    this.logError(error);
+                    tester.logError(error);
                 }
 
                 // Log out automatically after 1 hour
