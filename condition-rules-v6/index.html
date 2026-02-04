@@ -979,8 +979,8 @@
                         conditions: this.conditionCodes.map(conditionCode => this.makeCondition(conditionCode, conditionIdMap, payloadIdMap, levelCombinationIdMap, false)),
                         stateTimeLogs: [],
                         queries: this.makeQueries(),
-                        experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
-                        experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
+                        experimentSegmentInclusion: [],
+                        experimentSegmentExclusion: [],
                         factors: this.experimentTypeSelect.value !== "Factorial" ? [] : this.makeFactors(this.conditionCodes, levelIdMap),
                         stratificationFactor: null,
                         conditionPayloads: this.makePayloads(decisionPoint, conditionIdMap, payloadIdMap, levelCombinationIdMap, useReference)
@@ -1307,41 +1307,6 @@
                         queries.push(query);
                     }
                     return queries;
-                }
-
-                makeExperimentSegment(segmentNamePrefix, type) {
-                    const name = `${segmentNamePrefix} ${type} Segment`;
-                    const groupForSegment = [];
-                    if (type === "Inclusion") {
-                        groupForSegment.push(
-                            {
-                                createdAt: this.date,
-                                updatedAt: this.date,
-                                versionNumber: 1,
-                                groupId: "All",
-                                type: "All"
-                            }
-                        );
-                    }
-
-                    return {
-                        createdAt: this.date,
-                        updatedAt: this.date,
-                        versionNumber: 1,
-                        segment: {
-                            createdAt: this.date,
-                            updatedAt: this.date,
-                            versionNumber: 1,
-                            id: this.idGenerator.uuidv4(),
-                            name: name,
-                            description: name,
-                            context: this.appContextSelect.value,
-                            type: "private",
-                            individualForSegment: [],
-                            groupForSegment: groupForSegment,
-                            subSegments: []
-                        }
-                    }
                 }
             }
 
