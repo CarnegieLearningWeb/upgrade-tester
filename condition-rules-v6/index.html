@@ -543,8 +543,8 @@
                                 <div id="split-bottomleft">Student</div>
                             </th>
                             <th>Inactive</th>
-                            <th>Enrolling</th>
-                            <th>Complete</th>
+                            <th>Running</th>
+                            <th>Paused</th>
                         </tr>
                         <tr>
                             <td class="student-cell">Student 1 (Individual)</td>
@@ -702,8 +702,8 @@
                     for (let i = 0; i < this.conditionCells.length; i += 3) {
                         this.conditionCellMap[`student${Math.floor(i / 3) + 1}`] = {
                             inactive: this.conditionCells[i],
-                            enrolling: this.conditionCells[i + 1],
-                            enrollmentComplete: this.conditionCells[i + 2]
+                            running: this.conditionCells[i + 1],
+                            paused: this.conditionCells[i + 2]
                         };
                     }
                     this.responseTimeCellMap = {
@@ -1017,70 +1017,70 @@
                         // Student 1 (Individual) visits the decision point the first time (Inactive)
                         await this.visitDecisionPoint(student1.name, student1.id, null);
 
-                        // Update experiment status to enrolling
-                        await this.updateExperimentStatus("enrolling");
+                        // Update experiment status to running
+                        await this.updateExperimentStatus("running");
 
-                        // Student 1 (Individual) visits the decision point the second time (Enrolling)
+                        // Student 1 (Individual) visits the decision point the second time (Running)
                         await this.visitDecisionPoint(student1.name, student1.id, null);
 
-                        // Student 2 (Individual) visits the decision point the first time (Enrolling)
+                        // Student 2 (Individual) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student2.name, student2.id, null);
 
-                        // Student 3 (Individual) visits the decision point the first time (Enrolling)
+                        // Student 3 (Individual) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student3.name, student3.id, null);
 
-                        // Student 4 (Individual) visits the decision point the first time (Enrolling)
+                        // Student 4 (Individual) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student4.name, student4.id, null);
 
-                        // Update experiment status to enrollment complete
-                        await this.updateExperimentStatus("enrollmentComplete");
+                        // Update experiment status to paused
+                        await this.updateExperimentStatus("paused");
 
-                        // Student 1 (Individual) visits the decision point the third time (Enrollment Complete)
+                        // Student 1 (Individual) visits the decision point the third time (Paused)
                         await this.visitDecisionPoint(student1.name, student1.id, null);
 
-                        // Student 2 (Individual) visits the decision point the second time (Enrollment Complete)
+                        // Student 2 (Individual) visits the decision point the second time (Paused)
                         await this.visitDecisionPoint(student2.name, student2.id, null);
 
-                        // Student 3 (Individual) visits the decision point the second time (Enrollment Complete)
+                        // Student 3 (Individual) visits the decision point the second time (Paused)
                         await this.visitDecisionPoint(student3.name, student3.id, null);
 
-                        // Student 4 (Individual) visits the decision point the second time (Enrollment Complete)
+                        // Student 4 (Individual) visits the decision point the second time (Paused)
                         await this.visitDecisionPoint(student4.name, student4.id, null);
 
-                        // Student 5 (Individual) visits the decision point the first time (Enrollment Complete)
+                        // Student 5 (Individual) visits the decision point the first time (Paused)
                         await this.visitDecisionPoint(student5.name, student5.id, null);
                     } else {
                         // Student 1 (Group A) visits the decision point the first time (Inactive)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Update experiment status to enrolling
-                        await this.updateExperimentStatus("enrolling");
+                        // Update experiment status to running
+                        await this.updateExperimentStatus("running");
 
-                        // Student 1 (Group A) visits the decision point the second time (Enrolling)
+                        // Student 1 (Group A) visits the decision point the second time (Running)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Group A) visits the decision point the first time (Enrolling)
+                        // Student 2 (Group A) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 4 (Group B) visits the decision point the first time (Enrolling)
+                        // Student 4 (Group B) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student4.name, student4.id, "Group B");
 
-                        // Update experiment status to enrollment complete
-                        await this.updateExperimentStatus("enrollmentComplete");
+                        // Update experiment status to paused
+                        await this.updateExperimentStatus("paused");
 
-                        // Student 1 (Group A) visits the decision point the third time (Enrollment Complete)
+                        // Student 1 (Group A) visits the decision point the third time (Paused)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Group A) visits the decision point the second time (Enrollment Complete)
+                        // Student 2 (Group A) visits the decision point the second time (Paused)
                         await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 3 (Group A) visits the decision point the first time (Enrollment Complete)
+                        // Student 3 (Group A) visits the decision point the first time (Paused)
                         await this.visitDecisionPoint(student3.name, student3.id, "Group A");
 
-                        // Student 4 (Group B) visits the decision point the second time (Enrolling)
+                        // Student 4 (Group B) visits the decision point the second time (Running)
                         await this.visitDecisionPoint(student4.name, student4.id, "Group B");
 
-                        // Student 5 (Group B) visits the decision point the first time (Enrolling)
+                        // Student 5 (Group B) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student5.name, student5.id, "Group B");
                     }
                 }
