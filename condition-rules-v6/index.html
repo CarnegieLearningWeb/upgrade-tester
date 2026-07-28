@@ -2,7 +2,7 @@
 <html lang="en-US">
 
 <head>
-    <title>UpGrade Tester v6.0.13 - Condition Rules</title>
+    <title>UpGrade Tester v6.4.0 - Condition Rules</title>
     <meta charset=utf-8 />
     <meta name="description" content="UpGrade Tester" />
     <meta name="keywords" content="UpGrade, Tester" />
@@ -439,7 +439,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@6.0.13/dist/browser/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upgrade_client_lib@6.4.0/dist/browser/index.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div id="g_id_onload"
         data-client_id="656936260684-hdsihcgcdrcbeom72n56o8n5rb2mtc58.apps.googleusercontent.com"
@@ -453,7 +453,7 @@
             <div id="title">
                 <img id="upgrade-logo" src="/assets/images/upgrade-logo.png" alt="UpGrade Logo">
                 <h2 id="title-text">UpGrade Tester</h2>
-                <h4 id="subtitle-text">v6.0.13 - Condition Rules</h4>
+                <h4 id="subtitle-text">v6.4.0 - Condition Rules</h4>
             </div>
             <div class="g_id_signin" data-type="standard"></div>
         </div>
@@ -543,8 +543,8 @@
                                 <div id="split-bottomleft">Student</div>
                             </th>
                             <th>Inactive</th>
-                            <th>Enrolling</th>
-                            <th>Complete</th>
+                            <th>Running</th>
+                            <th>Paused</th>
                         </tr>
                         <tr>
                             <td class="student-cell">Student 1 (Individual)</td>
@@ -702,8 +702,8 @@
                     for (let i = 0; i < this.conditionCells.length; i += 3) {
                         this.conditionCellMap[`student${Math.floor(i / 3) + 1}`] = {
                             inactive: this.conditionCells[i],
-                            enrolling: this.conditionCells[i + 1],
-                            enrollmentComplete: this.conditionCells[i + 2]
+                            running: this.conditionCells[i + 1],
+                            paused: this.conditionCells[i + 2]
                         };
                     }
                     this.responseTimeCellMap = {
@@ -830,10 +830,10 @@
                         }
 
                         // Create experiment
-                        await this.createExperiment();
+                        const experimentData = await this.createExperiment();
 
                         // Perform test
-                        await this.performTest();
+                        await this.performTest(experimentData);
 
                         // Delete the experiment
                         await this.deleteExperiment();
@@ -979,17 +979,21 @@
                         conditions: this.conditionCodes.map(conditionCode => this.makeCondition(conditionCode, conditionIdMap, payloadIdMap, levelCombinationIdMap, false)),
                         stateTimeLogs: [],
                         queries: this.makeQueries(),
-                        experimentSegmentInclusion: this.makeExperimentSegment(segmentNamePrefix, "Inclusion"),
-                        experimentSegmentExclusion: this.makeExperimentSegment(segmentNamePrefix, "Exclusion"),
+                        experimentSegmentInclusion: [],
+                        experimentSegmentExclusion: [],
                         factors: this.experimentTypeSelect.value !== "Factorial" ? [] : this.makeFactors(this.conditionCodes, levelIdMap),
                         stratificationFactor: null,
                         conditionPayloads: this.makePayloads(decisionPoint, conditionIdMap, payloadIdMap, levelCombinationIdMap, useReference)
                     }
                     // console.log("experimentData:", JSON.stringify(experimentData, null, 2));
-                    await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments`, experimentData);
+                    return await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments`, experimentData);
                 }
 
-                async performTest() {
+                async updateExperiment(experimentData, updateData) {
+                    await this.fetchWrapper.put(`${this.hostUrlSelect.value}/api/experiments/${this.experimentId}`, { ...experimentData, ...updateData });
+                }
+
+                async performTest(experimentData) {
                     // Empty the condition cells
                     for (const conditionCell of this.conditionCells) {
                         conditionCell.innerText = "";
@@ -1015,84 +1019,93 @@
                     const student5 = makeStudent("student5");
                     if (this.assignmentUnitSelect.value === "Individual") {
                         // Student 1 (Individual) visits the decision point the first time (Inactive)
-                        await this.visitDecisionPoint(student1.name, student1.id, null);
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Update experiment status to enrolling
-                        await this.updateExperimentStatus("enrolling");
+                        // Update experiment status to running
+                        await this.updateExperimentStatus("running");
 
-                        // Student 1 (Individual) visits the decision point the second time (Enrolling)
-                        await this.visitDecisionPoint(student1.name, student1.id, null);
+                        // Student 1 (Individual) visits the decision point the second time (Running)
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Individual) visits the decision point the first time (Enrolling)
-                        await this.visitDecisionPoint(student2.name, student2.id, null);
+                        // Student 2 (Individual) visits the decision point the first time (Running)
+                        await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 3 (Individual) visits the decision point the first time (Enrolling)
-                        await this.visitDecisionPoint(student3.name, student3.id, null);
+                        // Student 3 (Individual) visits the decision point the first time (Running)
+                        await this.visitDecisionPoint(student3.name, student3.id, "Group A");
 
-                        // Student 4 (Individual) visits the decision point the first time (Enrolling)
-                        await this.visitDecisionPoint(student4.name, student4.id, null);
+                        // Student 4 (Individual) visits the decision point the first time (Running)
+                        await this.visitDecisionPoint(student4.name, student4.id, "Group A");
 
-                        // Update experiment status to enrollment complete
-                        await this.updateExperimentStatus("enrollmentComplete");
+                        // Update experiment status to paused
+                        await this.updateExperimentStatus("paused", experimentData);
 
-                        // Student 1 (Individual) visits the decision point the third time (Enrollment Complete)
-                        await this.visitDecisionPoint(student1.name, student1.id, null);
+                        // Student 1 (Individual) visits the decision point the third time (Paused)
+                        await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Individual) visits the decision point the second time (Enrollment Complete)
-                        await this.visitDecisionPoint(student2.name, student2.id, null);
+                        // Student 2 (Individual) visits the decision point the second time (Paused)
+                        await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 3 (Individual) visits the decision point the second time (Enrollment Complete)
-                        await this.visitDecisionPoint(student3.name, student3.id, null);
+                        // Student 3 (Individual) visits the decision point the second time (Paused)
+                        await this.visitDecisionPoint(student3.name, student3.id, "Group A");
 
-                        // Student 4 (Individual) visits the decision point the second time (Enrollment Complete)
-                        await this.visitDecisionPoint(student4.name, student4.id, null);
+                        // Student 4 (Individual) visits the decision point the second time (Paused)
+                        await this.visitDecisionPoint(student4.name, student4.id, "Group A");
 
-                        // Student 5 (Individual) visits the decision point the first time (Enrollment Complete)
-                        await this.visitDecisionPoint(student5.name, student5.id, null);
+                        // Student 5 (Individual) visits the decision point the first time (Paused)
+                        await this.visitDecisionPoint(student5.name, student5.id, "Group A");
                     } else {
                         // Student 1 (Group A) visits the decision point the first time (Inactive)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Update experiment status to enrolling
-                        await this.updateExperimentStatus("enrolling");
+                        // Update experiment status to running
+                        await this.updateExperimentStatus("running");
 
-                        // Student 1 (Group A) visits the decision point the second time (Enrolling)
+                        // Student 1 (Group A) visits the decision point the second time (Running)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Group A) visits the decision point the first time (Enrolling)
+                        // Student 2 (Group A) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 4 (Group B) visits the decision point the first time (Enrolling)
+                        // Student 4 (Group B) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student4.name, student4.id, "Group B");
 
-                        // Update experiment status to enrollment complete
-                        await this.updateExperimentStatus("enrollmentComplete");
+                        // Update experiment status to paused
+                        await this.updateExperimentStatus("paused", experimentData);
 
-                        // Student 1 (Group A) visits the decision point the third time (Enrollment Complete)
+                        // Student 1 (Group A) visits the decision point the third time (Paused)
                         await this.visitDecisionPoint(student1.name, student1.id, "Group A");
 
-                        // Student 2 (Group A) visits the decision point the second time (Enrollment Complete)
+                        // Student 2 (Group A) visits the decision point the second time (Paused)
                         await this.visitDecisionPoint(student2.name, student2.id, "Group A");
 
-                        // Student 3 (Group A) visits the decision point the first time (Enrollment Complete)
+                        // Student 3 (Group A) visits the decision point the first time (Paused)
                         await this.visitDecisionPoint(student3.name, student3.id, "Group A");
 
-                        // Student 4 (Group B) visits the decision point the second time (Enrolling)
+                        // Student 4 (Group B) visits the decision point the second time (Running)
                         await this.visitDecisionPoint(student4.name, student4.id, "Group B");
 
-                        // Student 5 (Group B) visits the decision point the first time (Enrolling)
+                        // Student 5 (Group B) visits the decision point the first time (Running)
                         await this.visitDecisionPoint(student5.name, student5.id, "Group B");
                     }
                 }
 
-                async updateExperimentStatus(experimentStatus) {
+                async updateExperimentStatus(experimentStatus, experimentData = undefined) {
                     if (experimentStatus === this.experimentStatus) {
                         return;
                     }
-                    await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments/state`, {
-                        experimentId: this.experimentId,
-                        state: experimentStatus
-                    });
+                    if (experimentStatus === "paused") {
+                        const postExperimentRule = this.postExperimentRuleSelect.value === "Continue" ? "continue" : "assign";
+                        const postExperimentConditionCode = ["Continue", "Default"].includes(this.postExperimentRuleSelect.value) ? null : this.postExperimentRuleSelect.value;
+                        const condition = experimentData.conditions.find(c => c.conditionCode === postExperimentConditionCode);
+                        const postExperimentConditionId = condition ? condition.id : null;
+                        const updateData = { state: "paused", postExperimentRule: postExperimentRule, revertTo: postExperimentConditionId };
+                        await this.updateExperiment(experimentData, updateData);
+                    } else {
+                        await this.fetchWrapper.post(`${this.hostUrlSelect.value}/api/experiments/state`, {
+                            experimentId: this.experimentId,
+                            state: experimentStatus
+                        });
+                    }
                     this.experimentStatus = experimentStatus;
 
                     // Delay for a specified number of milliseconds
@@ -1105,17 +1118,18 @@
                     const initStartTime = Date.now();
                     await upClient.init();
                     this.responseTimeCellMap.init.responseTimes.push(Date.now() - initStartTime);
-                    if (group && this.assignmentUnitSelect.value !== "Individual") {
-                        const groupType = this.assignmentUnitSelect.value;
-                        const groupMembership = {
-                            [groupType]:  ["Group A", "Group B"]
-                        }
-                        const workingGroup = {
-                            [groupType]: group
-                        }
-                        await upClient.setGroupMembership(groupMembership);
-                        await upClient.setWorkingGroup(workingGroup);
+
+                    // Group membership is required for the user to be enrolled if there's any group-level global exclusions defined for the context
+                    const groupType = this.assignmentUnitSelect.value;
+                    const groupMembership = {
+                        [groupType]:  ["Group A", "Group B"]
                     }
+                    const workingGroup = {
+                        [groupType]: group
+                    }
+                    await upClient.setGroupMembership(groupMembership);
+                    await upClient.setWorkingGroup(workingGroup);
+
                     const experimentSite = `Site_${this.experimentId}`;
                     const experimentTarget = `Target_${this.experimentId}`;
                     const assignStartTime = Date.now();
@@ -1307,41 +1321,6 @@
                         queries.push(query);
                     }
                     return queries;
-                }
-
-                makeExperimentSegment(segmentNamePrefix, type) {
-                    const name = `${segmentNamePrefix} ${type} Segment`;
-                    const groupForSegment = [];
-                    if (type === "Inclusion") {
-                        groupForSegment.push(
-                            {
-                                createdAt: this.date,
-                                updatedAt: this.date,
-                                versionNumber: 1,
-                                groupId: "All",
-                                type: "All"
-                            }
-                        );
-                    }
-
-                    return {
-                        createdAt: this.date,
-                        updatedAt: this.date,
-                        versionNumber: 1,
-                        segment: {
-                            createdAt: this.date,
-                            updatedAt: this.date,
-                            versionNumber: 1,
-                            id: this.idGenerator.uuidv4(),
-                            name: name,
-                            description: name,
-                            context: this.appContextSelect.value,
-                            type: "private",
-                            individualForSegment: [],
-                            groupForSegment: groupForSegment,
-                            subSegments: []
-                        }
-                    }
                 }
             }
 
